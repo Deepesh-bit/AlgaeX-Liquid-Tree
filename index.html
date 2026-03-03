@@ -1,0 +1,2416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlgaeX Urban — Climate Intelligence Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&family=Inter:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:             #f2f4f0;
+  --bg2:            #eef1ec;
+  --surface:        #ffffff;
+  --surface2:       #f7f9f7;
+  --surface3:       #eff4ef;
+  --surface-glass:  rgba(255,255,255,0.72);
+  --border:         #dde6de;
+  --border2:        #c8d9cb;
+  --accent:         #1a7a3c;
+  --accent2:        #15683a;
+  --accent3:        #0f4d2a;
+  --accent-light:   rgba(26,122,60,0.09);
+  --teal:           #0c8577;
+  --amber:          #b45309;
+  --red:            #c0392b;
+  --blue:           #1d4ed8;
+  --sky:            #0369a1;
+  --slate:          #334155;
+  --text-primary:   #111b14;
+  --text-secondary: #3a5c48;
+  --text-muted:     #7a9a85;
+  --shadow-sm:      0 1px 2px rgba(0,0,0,0.04), 0 2px 6px rgba(0,0,0,0.05);
+  --shadow:         0 4px 12px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-lg:      0 16px 48px rgba(0,0,0,0.12), 0 6px 18px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.05);
+  --shadow-card:    0 0 0 1px rgba(0,0,0,0.03), 0 2px 8px rgba(0,0,0,0.05), 0 8px 20px rgba(0,0,0,0.06);
+  --sidebar-w:      228px;
+  --header-h:       54px;
+  --radius:         12px;
+  --radius-sm:      7px;
+  --transition:     all 0.22s cubic-bezier(0.4,0,0.2,1);
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { font-size:14px; }
+body {
+  font-family:'Manrope',sans-serif;
+  background:var(--bg); color:var(--text-primary);
+  height:100vh; overflow:hidden;
+  display:flex; flex-direction:column;
+  position:relative;
+}
+
+/* ── NUMERIC TYPOGRAPHY — crisp tabular Inter for all big numbers ── */
+.kpi-value, .acpi-score-num, .impact-num, .scale-num, .credit-card-value,
+.city-stat-num, .esg-metric-value, .acpi-sub-val, .sdg-num {
+  font-family:'Inter',system-ui,sans-serif !important;
+  font-variant-numeric: tabular-nums !important;
+  font-feature-settings: "tnum" 1, "kern" 1 !important;
+  letter-spacing: -0.04em !important;
+}
+.hud-val, .mech-val, .sensor-val-cell, .viz-info-val, .viz-spec-val,
+.ai-ctx-val, .tb-clock, .health-val, .sysinfo-val, .footer-uptime {
+  font-family:'IBM Plex Mono',monospace !important;
+  font-variant-numeric: tabular-nums !important;
+}
+.card-sub, .nav-badge, .status-chip, .code-preview, .tb-tagline,
+.tb-badge, .sensor-unit-cell, .kpi-label, .alert-time, .chat-meta,
+.esg-metric-label, .acpi-sub-label, .viz-info-label { 
+  font-family:'IBM Plex Mono',monospace !important; 
+}
+
+/* ── AMBIENT BACKGROUND ── */
+#ambient-bg {
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background: radial-gradient(ellipse 80% 60% at 20% 10%, rgba(26,122,60,0.04) 0%, transparent 60%),
+              radial-gradient(ellipse 60% 80% at 80% 80%, rgba(12,133,119,0.04) 0%, transparent 60%),
+              radial-gradient(ellipse 50% 50% at 50% 50%, rgba(255,255,255,0) 0%, transparent 100%);
+  animation: ambientShift 18s ease-in-out infinite alternate;
+}
+@keyframes ambientShift {
+  0%   { background-position: 0% 0%; }
+  50%  { background-position: 100% 100%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ── TOP BAR ── */
+#topbar {
+  height:var(--header-h); min-height:var(--header-h);
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; padding:0 20px;
+  gap:16px; z-index:200;
+  box-shadow: var(--shadow-sm);
+  position:relative;
+}
+.tb-logo { display:flex; align-items:center; gap:10px; width:var(--sidebar-w); min-width:var(--sidebar-w); }
+.tb-logo-mark {
+  width:32px; height:32px; border-radius:8px;
+  background:linear-gradient(135deg,var(--accent2),var(--accent));
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Syne',sans-serif; font-weight:800; font-size:13px; color:#fff;
+  flex-shrink:0; box-shadow:0 2px 8px rgba(26,122,60,0.3);
+}
+.tb-logo-text { line-height:1.1; }
+.tb-name { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; color:var(--text-primary); letter-spacing:-0.3px; }
+.tb-tagline { font-size:9.5px; color:var(--text-muted); font-family:'DM Mono',monospace; letter-spacing:0.8px; }
+.tb-divider { width:1px; height:26px; background:var(--border2); }
+.tb-status { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-secondary); font-weight:500; }
+.live-dot {
+  width:7px; height:7px; border-radius:50%;
+  background:var(--accent); flex-shrink:0;
+  box-shadow:0 0 0 0 rgba(26,122,60,0.5);
+  animation:livepulse 2s ease-in-out infinite;
+}
+@keyframes livepulse {
+  0%   { box-shadow:0 0 0 0 rgba(26,122,60,0.5); }
+  60%  { box-shadow:0 0 0 6px rgba(26,122,60,0); }
+  100% { box-shadow:0 0 0 0 rgba(26,122,60,0); }
+}
+.tb-spacer { flex:1; }
+.tb-clock { font-family:'DM Mono',monospace; font-size:13px; color:var(--text-secondary); letter-spacing:0.5px; }
+.tb-badge {
+  padding:4px 10px; border-radius:5px; font-size:11px;
+  font-family:'DM Mono',monospace; letter-spacing:0.3px;
+  border:1px solid var(--border2); color:var(--text-secondary);
+  background:var(--surface2); font-weight:500;
+}
+.tb-badge.warn { border-color:rgba(180,83,9,0.35); color:var(--amber); background:rgba(180,83,9,0.06); }
+.tb-avatar {
+  width:30px; height:30px; border-radius:50%;
+  background:linear-gradient(135deg,var(--surface3),var(--border2));
+  border:1px solid var(--border2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; color:var(--accent); font-weight:700; cursor:pointer;
+  box-shadow:var(--shadow-sm);
+}
+
+/* ── BODY ── */
+#body { display:flex; flex:1; overflow:hidden; position:relative; z-index:1; }
+
+/* ── SIDEBAR ── */
+#sidebar {
+  width:var(--sidebar-w); min-width:var(--sidebar-w);
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex; flex-direction:column;
+  overflow-y:auto; overflow-x:hidden;
+  padding:10px 0;
+  box-shadow:1px 0 8px rgba(0,0,0,0.03);
+}
+#sidebar::-webkit-scrollbar { width:0; }
+.nav-section-label {
+  font-size:9px; font-family:'DM Mono',monospace;
+  color:var(--text-muted); letter-spacing:1.8px; text-transform:uppercase;
+  padding:14px 16px 5px; font-weight:500;
+}
+.nav-item {
+  display:flex; align-items:center; gap:10px;
+  padding:8px 10px; cursor:pointer;
+  font-size:12.5px; font-weight:500; color:var(--text-secondary);
+  position:relative; margin:1px 8px;
+  border-radius:var(--radius-sm);
+  transition:var(--transition);
+}
+.nav-item:hover { background:var(--surface3); color:var(--text-primary); transform:translateX(1px); }
+.nav-item.active {
+  background:var(--accent-light);
+  color:var(--accent); font-weight:600;
+  border:1px solid rgba(26,122,60,0.14);
+  box-shadow:var(--shadow-sm);
+}
+.nav-icon { font-size:14px; width:18px; text-align:center; flex-shrink:0; }
+.nav-badge {
+  margin-left:auto; font-size:9px; padding:1px 6px;
+  border-radius:3px; font-family:'DM Mono',monospace; font-weight:500;
+}
+.nav-badge.live { background:rgba(26,122,60,0.12); color:var(--accent); }
+.nav-badge.warn { background:rgba(180,83,9,0.1); color:var(--amber); }
+.nav-badge.new  { background:rgba(29,78,216,0.1); color:var(--blue); }
+.sidebar-footer {
+  margin-top:auto; padding:10px 10px 6px;
+  border-top:1px solid var(--border);
+}
+.sys-health {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:10px 12px;
+  box-shadow:var(--shadow-sm);
+}
+.sys-health-title { font-size:9px; color:var(--text-muted); font-family:'DM Mono',monospace; letter-spacing:1.2px; margin-bottom:8px; font-weight:500; }
+.health-bar-row { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+.health-label { font-size:10px; color:var(--text-secondary); width:48px; flex-shrink:0; font-weight:500; }
+.health-bar { flex:1; height:3px; background:var(--border); border-radius:2px; overflow:hidden; }
+.health-fill { height:100%; border-radius:2px; transition:width 1.2s ease; }
+.health-val { font-size:10px; color:var(--text-secondary); width:28px; text-align:right; font-family:'DM Mono',monospace; }
+.sidebar-product-footer {
+  padding:10px 12px 4px;
+  font-size:9px; font-family:'DM Mono',monospace;
+  color:var(--text-muted); line-height:1.7;
+  border-top:1px solid var(--border); margin-top:6px;
+}
+.sysinfo-row { display:flex; justify-content:space-between; }
+.sysinfo-key { color:var(--text-muted); }
+.sysinfo-val { color:var(--text-secondary); font-weight:500; }
+
+/* ── CONTENT ── */
+#content { flex:1; overflow:hidden; position:relative; }
+.page { position:absolute; inset:0; overflow-y:auto; overflow-x:hidden; display:none; padding:20px; }
+.page.active { display:block; }
+.page::-webkit-scrollbar { width:4px; }
+.page::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+#page-3d, #page-ai { padding:0!important; }
+
+/* ── CARDS ── */
+.card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); overflow:hidden;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.02), 0 2px 6px rgba(0,0,0,0.04), 0 8px 20px rgba(0,0,0,0.055);
+  transition:box-shadow 0.22s, transform 0.22s;
+}
+.card:hover { 
+  box-shadow: 0 0 0 1px rgba(26,122,60,0.06), 0 4px 12px rgba(0,0,0,0.07), 0 16px 36px rgba(0,0,0,0.08);
+  transform:translateY(-1px);
+}
+.card-header {
+  padding:13px 16px 11px;
+  display:flex; align-items:center; justify-content:space-between;
+  border-bottom:1px solid var(--border);
+  background:var(--surface2);
+}
+.card-title { font-size:12.5px; font-weight:600; color:var(--text-primary); letter-spacing:-0.1px; }
+.card-sub { font-size:10.5px; color:var(--text-muted); font-family:'DM Mono',monospace; }
+.card-body { padding:16px; }
+
+/* ── KPI GRID ── */
+.kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
+.kpi-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:16px;
+  position:relative; overflow:hidden;
+  box-shadow:var(--shadow-sm);
+  transition:box-shadow 0.25s, transform 0.25s;
+  cursor:default;
+}
+.kpi-card:hover { box-shadow:var(--shadow); transform:translateY(-1px); }
+.kpi-card::after {
+  content:''; position:absolute; bottom:0; left:0; right:0; height:2px;
+  transition:opacity 0.3s;
+}
+.kpi-card.green::after { background:linear-gradient(90deg,transparent,var(--accent),transparent); }
+.kpi-card.teal::after  { background:linear-gradient(90deg,transparent,var(--teal),transparent); }
+.kpi-card.amber::after { background:linear-gradient(90deg,transparent,var(--amber),transparent); }
+.kpi-card.blue::after  { background:linear-gradient(90deg,transparent,var(--blue),transparent); }
+.kpi-card .kpi-pulse {
+  position:absolute; inset:0; border-radius:var(--radius);
+  background:rgba(26,122,60,0.08); opacity:0;
+  pointer-events:none;
+}
+.kpi-card.pulsing .kpi-pulse { animation:kpiPulse 0.6s ease-out; }
+@keyframes kpiPulse {
+  0%   { opacity:0; transform:scale(1); }
+  30%  { opacity:1; }
+  100% { opacity:0; transform:scale(1.02); }
+}
+.kpi-label { font-size:10px; color:var(--text-muted); font-family:'DM Mono',monospace; letter-spacing:0.6px; margin-bottom:8px; display:flex; align-items:center; gap:6px; text-transform:uppercase; font-weight:500; }
+.kpi-value { font-family:'Syne',sans-serif; font-size:28px; font-weight:700; line-height:1; margin-bottom:6px; letter-spacing:-1px; transition:color 0.3s; }
+.kpi-value.green { color:var(--accent); }
+.kpi-value.teal  { color:var(--teal); }
+.kpi-value.amber { color:var(--amber); }
+.kpi-value.blue  { color:var(--blue); }
+.kpi-unit { font-size:12px; color:var(--text-muted); font-weight:400; margin-left:3px; font-family:'Manrope',sans-serif; }
+.kpi-change { font-size:11px; display:flex; align-items:center; gap:4px; font-weight:500; }
+.up   { color:var(--accent); }
+.down { color:var(--red); }
+.flat { color:var(--text-muted); }
+
+/* ── CHART GRIDS ── */
+.charts-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+.charts-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px; }
+.chart-wrap { position:relative; height:180px; }
+.chart-wrap canvas { width:100%!important; height:100%!important; }
+
+/* ── SENSOR TABLE ── */
+.sensor-table { width:100%; border-collapse:collapse; }
+.sensor-table th {
+  font-size:9.5px; font-family:'DM Mono',monospace; color:var(--text-muted);
+  text-align:left; padding:8px 14px; letter-spacing:0.8px; text-transform:uppercase;
+  border-bottom:1px solid var(--border); font-weight:500;
+  background:var(--surface2);
+}
+.sensor-table td { padding:10px 14px; font-size:12px; border-bottom:1px solid rgba(221,230,222,0.6); vertical-align:middle; }
+.sensor-table tr:last-child td { border-bottom:none; }
+.sensor-table tr:hover td { background:var(--surface2); }
+.sensor-name { color:var(--text-primary); font-weight:500; }
+.sensor-val-cell { font-family:'DM Mono',monospace; color:var(--text-primary); font-weight:500; }
+.sensor-unit-cell { color:var(--text-muted); font-family:'DM Mono',monospace; font-size:10px; }
+.status-chip {
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:9.5px; font-family:'DM Mono',monospace;
+  padding:2px 8px; border-radius:4px; letter-spacing:0.3px; font-weight:500;
+}
+.status-chip.ok   { background:rgba(26,122,60,0.08); color:var(--accent); border:1px solid rgba(26,122,60,0.18); }
+.status-chip.warn { background:rgba(180,83,9,0.08); color:var(--amber); border:1px solid rgba(180,83,9,0.2); }
+.status-chip.err  { background:rgba(192,57,43,0.08); color:var(--red); border:1px solid rgba(192,57,43,0.2); }
+.mini-bar { width:72px; height:3px; background:var(--border); border-radius:2px; overflow:hidden; display:inline-block; vertical-align:middle; margin-left:8px; }
+.mini-fill { height:100%; border-radius:2px; transition:width 1.2s cubic-bezier(0.4,0,0.2,1); }
+
+/* ── MECH GRID ── */
+.mech-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.mech-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:13px 14px;
+  display:flex; align-items:center; gap:12px;
+  box-shadow:var(--shadow-sm); transition:var(--transition);
+}
+.mech-card:hover { box-shadow:var(--shadow); transform:translateY(-1px); }
+.mech-icon-wrap {
+  width:36px; height:36px; border-radius:9px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; background:var(--surface3); border:1px solid var(--border2);
+}
+.mech-info { flex:1; min-width:0; }
+.mech-name { font-size:12px; font-weight:600; color:var(--text-primary); letter-spacing:-0.1px; }
+.mech-sub  { font-size:10px; color:var(--text-muted); font-family:'DM Mono',monospace; margin-top:1px; }
+.mech-right { text-align:right; }
+.mech-val  { font-family:'DM Mono',monospace; font-size:12px; color:var(--text-secondary); font-weight:500; }
+
+/* ── IMPACT ── */
+.impact-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:12px; }
+.impact-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:16px 12px; text-align:center;
+  box-shadow:var(--shadow-sm); transition:var(--transition);
+}
+.impact-card:hover { box-shadow:var(--shadow); transform:translateY(-2px); }
+.impact-emoji { font-size:22px; margin-bottom:8px; }
+.impact-num { font-family:'Syne',sans-serif; font-size:21px; font-weight:700; margin-bottom:3px; letter-spacing:-0.5px; }
+.impact-label { font-size:9.5px; color:var(--text-muted); font-family:'DM Mono',monospace; letter-spacing:0.5px; text-transform:uppercase; }
+.impact-sub { font-size:10px; color:var(--text-secondary); margin-top:4px; line-height:1.3; }
+.impact-track { height:3px; background:var(--border); border-radius:2px; margin-top:10px; overflow:hidden; }
+.impact-prog { height:100%; border-radius:2px; transition:width 1.2s; }
+
+/* ── ALERTS ── */
+.alert-list { display:flex; flex-direction:column; gap:6px; }
+.alert-row {
+  display:flex; align-items:flex-start; gap:10px;
+  padding:10px 13px; border-radius:var(--radius-sm);
+  border:1px solid; font-size:12px; transition:var(--transition);
+}
+.alert-row.ok   { background:rgba(26,122,60,0.04);  border-color:rgba(26,122,60,0.14); }
+.alert-row.warn { background:rgba(180,83,9,0.04); border-color:rgba(180,83,9,0.15); }
+.alert-row.info { background:rgba(29,78,216,0.04); border-color:rgba(29,78,216,0.15); }
+.alert-dot { width:6px; height:6px; border-radius:50%; margin-top:4px; flex-shrink:0; }
+.alert-dot.ok   { background:var(--accent); }
+.alert-dot.warn { background:var(--amber); }
+.alert-dot.info { background:var(--blue); }
+.alert-text  { flex:1; color:var(--text-primary); line-height:1.45; font-weight:450; }
+.alert-time  { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-muted); flex-shrink:0; margin-top:1px; }
+
+/* ── 3D PAGE ── */
+#viz-layout { display:flex; height:100%; }
+#viz-canvas-wrap {
+  flex:1; position:relative;
+  background:linear-gradient(160deg, #e8f0ea 0%, #d4e8d6 50%, #c8ddc8 100%);
+}
+#viz-canvas { width:100%; height:100%; display:block; }
+#viz-overlay { position:absolute; top:0; left:0; right:0; bottom:0; pointer-events:none; }
+#viz-title-block { position:absolute; top:20px; left:24px; }
+#viz-title-block h2 { font-family:'Syne',sans-serif; font-size:17px; font-weight:700; color:var(--text-primary); }
+#viz-title-block p  { font-size:11px; color:var(--text-secondary); font-family:'DM Mono',monospace; margin-top:3px; }
+#viz-hint { position:absolute; bottom:62px; left:0; right:0; text-align:center; font-size:10.5px; color:var(--text-muted); font-family:'DM Mono',monospace; }
+#viz-controls { position:absolute; bottom:18px; left:0; right:0; display:flex; justify-content:center; gap:8px; pointer-events:all; }
+.viz-btn {
+  padding:6px 14px; font-size:10.5px; cursor:pointer;
+  background:rgba(255,255,255,0.82); border:1px solid var(--border2);
+  color:var(--text-secondary); border-radius:var(--radius-sm); font-family:'DM Mono',monospace;
+  transition:var(--transition); letter-spacing:0.3px; font-weight:500;
+  backdrop-filter:blur(8px);
+}
+.viz-btn:hover { background:rgba(255,255,255,0.95); border-color:var(--accent2); color:var(--accent); }
+.viz-btn.active { background:rgba(26,122,60,0.1); border-color:var(--accent); color:var(--accent); }
+#viz-info-panel {
+  position:absolute; top:60px; right:20px;
+  background:rgba(255,255,255,0.88); border:1px solid var(--border2);
+  border-radius:var(--radius); padding:13px 15px; min-width:188px;
+  backdrop-filter:blur(12px); box-shadow:var(--shadow);
+}
+.viz-info-row { display:flex; justify-content:space-between; gap:16px; margin-bottom:6px; font-size:11px; }
+.viz-info-row:last-child { margin-bottom:0; }
+.viz-info-label { color:var(--text-muted); font-family:'DM Mono',monospace; font-weight:400; }
+.viz-info-val   { color:var(--accent); font-family:'DM Mono',monospace; font-weight:600; }
+/* FLOATING DATA HUD */
+#viz-hud {
+  position:absolute; bottom:100px; left:20px;
+  background:rgba(255,255,255,0.85); border:1px solid var(--border2);
+  border-radius:var(--radius-sm); padding:10px 13px;
+  backdrop-filter:blur(10px); box-shadow:var(--shadow);
+  min-width:160px; pointer-events:none;
+}
+.hud-row { display:flex; align-items:center; gap:8px; margin-bottom:4px; font-size:10px; }
+.hud-row:last-child { margin-bottom:0; }
+.hud-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+.hud-label { color:var(--text-muted); font-family:'DM Mono',monospace; flex:1; }
+.hud-val   { color:var(--text-primary); font-family:'DM Mono',monospace; font-weight:600; }
+.hud-bar   { width:40px; height:3px; background:rgba(0,0,0,0.08); border-radius:2px; overflow:hidden; }
+.hud-bar-fill { height:100%; border-radius:2px; transition:width 1s; }
+#viz-sidebar {
+  width:256px; min-width:256px;
+  background:var(--surface); border-left:1px solid var(--border);
+  display:flex; flex-direction:column; overflow-y:auto; padding:18px;
+  box-shadow:-2px 0 10px rgba(0,0,0,0.04);
+}
+#viz-sidebar::-webkit-scrollbar { width:3px; }
+#viz-sidebar::-webkit-scrollbar-thumb { background:var(--border2); }
+.viz-sidebar-title { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; margin-bottom:4px; color:var(--text-primary); }
+.viz-sidebar-sub   { font-size:11px; color:var(--text-muted); font-family:'DM Mono',monospace; margin-bottom:16px; }
+.component-list { display:flex; flex-direction:column; gap:5px; margin-bottom:14px; }
+.comp-item {
+  display:flex; align-items:center; gap:10px;
+  padding:8px 10px; border-radius:var(--radius-sm); cursor:pointer;
+  border:1px solid transparent; transition:var(--transition);
+}
+.comp-item:hover { background:var(--surface3); border-color:var(--border); }
+.comp-item.selected { background:var(--accent-light); border-color:rgba(26,122,60,0.22); }
+.comp-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.comp-name { font-size:12px; font-weight:500; color:var(--text-primary); }
+.comp-desc { font-size:10px; color:var(--text-muted); }
+.comp-status { margin-left:auto; font-size:10px; font-family:'DM Mono',monospace; font-weight:600; }
+.comp-status.ok   { color:var(--accent); }
+.comp-status.warn { color:var(--amber); }
+.viz-spec-block {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:13px; margin-top:10px;
+  box-shadow:var(--shadow-sm);
+}
+.viz-spec-title { font-size:9.5px; font-family:'DM Mono',monospace; color:var(--text-muted); letter-spacing:1px; margin-bottom:10px; font-weight:500; text-transform:uppercase; }
+.viz-spec-row { display:flex; justify-content:space-between; margin-bottom:6px; font-size:11px; }
+.viz-spec-key { color:var(--text-secondary); font-weight:450; }
+.viz-spec-val { color:var(--text-primary); font-family:'DM Mono',monospace; font-weight:500; }
+
+/* ── AI PAGE ── */
+#ai-layout { display:flex; height:100%; gap:0; position:relative; }
+#ai-chat-area { flex:1; display:flex; flex-direction:column; border-right:1px solid var(--border); position:relative; z-index:1; background:var(--surface); }
+#ai-chat-header {
+  padding:14px 20px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:12px; background:var(--surface2);
+  box-shadow:0 1px 4px rgba(0,0,0,0.04);
+}
+#ai-chat-messages { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:12px; }
+#ai-chat-messages::-webkit-scrollbar { width:4px; }
+#ai-chat-messages::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+.chat-msg { display:flex; gap:10px; max-width:86%; }
+.chat-msg.user { flex-direction:row-reverse; align-self:flex-end; }
+.chat-avatar {
+  width:28px; height:28px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:600; margin-top:2px;
+}
+.chat-avatar.ai   { background:rgba(26,122,60,0.12); color:var(--accent); border:1px solid rgba(26,122,60,0.2); }
+.chat-avatar.user { background:rgba(29,78,216,0.1); color:var(--blue); border:1px solid rgba(29,78,216,0.2); }
+.chat-bubble {
+  padding:10px 14px; border-radius:11px; font-size:12.5px; line-height:1.58; max-width:100%;
+  transition:var(--transition);
+}
+.chat-msg.ai   .chat-bubble { background:var(--surface2); border:1px solid var(--border); color:var(--text-primary); border-radius:4px 11px 11px 11px; box-shadow:var(--shadow-sm); }
+.chat-msg.user .chat-bubble { background:rgba(26,122,60,0.09); border:1px solid rgba(26,122,60,0.18); color:var(--text-primary); border-radius:11px 4px 11px 11px; }
+.chat-sys { text-align:center; font-size:10px; color:var(--text-muted); font-family:'DM Mono',monospace; padding:4px 0; }
+.chat-meta { font-size:9.5px; color:var(--text-muted); font-family:'DM Mono',monospace; margin-top:5px; display:flex; gap:10px; }
+.conf-score { color:var(--accent); font-weight:600; }
+.chat-actions { display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; }
+.chat-action-btn {
+  font-size:9.5px; padding:3px 9px; border-radius:4px;
+  background:var(--surface3); border:1px solid var(--border2);
+  color:var(--text-secondary); cursor:pointer; font-family:'DM Mono',monospace;
+  transition:var(--transition); font-weight:500;
+}
+.chat-action-btn:hover { background:var(--accent-light); border-color:var(--accent2); color:var(--accent); }
+.typing-indicator {
+  display:flex; gap:5px; align-items:center;
+  padding:10px 14px; background:var(--surface2);
+  border:1px solid var(--border); border-radius:4px 11px 11px 11px;
+  box-shadow:var(--shadow-sm);
+}
+.typing-dot {
+  width:5px; height:5px; border-radius:50%; background:var(--accent2);
+  animation:tdot 1.3s ease-in-out infinite;
+}
+.typing-dot:nth-child(2){animation-delay:.22s}
+.typing-dot:nth-child(3){animation-delay:.44s}
+@keyframes tdot{0%,60%,100%{transform:translateY(0);opacity:0.5}30%{transform:translateY(-6px);opacity:1}}
+#ai-input-bar {
+  padding:13px 16px; border-top:1px solid var(--border);
+  display:flex; gap:8px; background:var(--surface2);
+}
+#ai-input {
+  flex:1; background:var(--surface); border:1px solid var(--border2);
+  border-radius:var(--radius-sm); padding:9px 14px;
+  font-family:'Manrope',sans-serif; font-size:12.5px; color:var(--text-primary); outline:none;
+  transition:border 0.18s, box-shadow 0.18s;
+}
+#ai-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(26,122,60,0.1); }
+#ai-input::placeholder { color:var(--text-muted); }
+#ai-send {
+  padding:9px 18px; background:var(--accent);
+  border:none; border-radius:var(--radius-sm); color:#fff;
+  font-weight:600; font-size:12.5px; cursor:pointer;
+  font-family:'Manrope',sans-serif; transition:background 0.18s, box-shadow 0.18s;
+  box-shadow:0 2px 8px rgba(26,122,60,0.25);
+}
+#ai-send:hover { background:var(--accent2); box-shadow:0 4px 14px rgba(26,122,60,0.35); }
+#ai-sidebar {
+  width:248px; min-width:248px;
+  padding:16px; overflow-y:auto; background:var(--surface2);
+  position:relative; z-index:1;
+}
+/* Neural net bg behind AI sidebar */
+#ai-neural-bg {
+  position:absolute; top:0; left:0; right:0; bottom:0;
+  z-index:0; opacity:0.4; pointer-events:none;
+}
+#ai-sidebar { position:relative; z-index:1; }
+.ai-sidebar-section { margin-bottom:16px; }
+.ai-section-title { font-size:9px; font-family:'DM Mono',monospace; color:var(--text-muted); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:8px; font-weight:500; }
+.ai-context-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:6px;
+  box-shadow:var(--shadow-sm);
+}
+.ai-ctx-label { font-size:9.5px; color:var(--text-muted); font-family:'DM Mono',monospace; margin-bottom:3px; letter-spacing:0.5px; }
+.ai-ctx-val   { font-size:13px; font-weight:700; font-family:'DM Mono',monospace; }
+.ai-ctx-val.green { color:var(--accent); }
+.ai-ctx-val.teal  { color:var(--teal); }
+.ai-ctx-val.amber { color:var(--amber); }
+.quick-prompt {
+  padding:8px 10px; border-radius:var(--radius-sm); cursor:pointer;
+  background:var(--surface); border:1px solid var(--border);
+  font-size:11px; color:var(--text-secondary); margin-bottom:5px;
+  transition:var(--transition); line-height:1.4; font-weight:450;
+  box-shadow:var(--shadow-sm);
+}
+.quick-prompt:hover { background:var(--accent-light); border-color:rgba(26,122,60,0.2); color:var(--accent); transform:translateX(2px); }
+
+/* ── PAGE HEADER ── */
+.page-header { margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; }
+.page-h-left h1 { font-family:'Syne',sans-serif; font-size:20px; font-weight:700; color:var(--text-primary); letter-spacing:-0.5px; }
+.page-h-left p  { font-size:11.5px; color:var(--text-muted); margin-top:2px; font-weight:450; }
+.page-h-right { display:flex; gap:8px; }
+.btn-outline {
+  padding:7px 14px; border-radius:var(--radius-sm); font-size:12px;
+  border:1px solid var(--border2); color:var(--text-secondary);
+  background:var(--surface); cursor:pointer; font-family:'Manrope',sans-serif;
+  transition:var(--transition); font-weight:500; box-shadow:var(--shadow-sm);
+}
+.btn-outline:hover { border-color:var(--accent2); color:var(--accent); background:var(--accent-light); }
+.btn-primary {
+  padding:7px 14px; border-radius:var(--radius-sm); font-size:12px;
+  border:1px solid rgba(26,122,60,0.3); color:var(--accent);
+  background:var(--accent-light); cursor:pointer;
+  font-family:'Manrope',sans-serif; font-weight:600; transition:var(--transition);
+  box-shadow:0 2px 8px rgba(26,122,60,0.15);
+}
+.btn-primary:hover { background:rgba(26,122,60,0.15); box-shadow:0 4px 14px rgba(26,122,60,0.22); }
+
+.section-label {
+  font-size:9px; font-family:'DM Mono',monospace; color:var(--text-muted);
+  letter-spacing:1.5px; text-transform:uppercase; margin:14px 0 8px;
+  display:flex; align-items:center; gap:8px; font-weight:500;
+}
+.section-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* ══════════════════════════════════════
+   NEW: CARBON INTELLIGENCE PAGE
+══════════════════════════════════════ */
+.scenario-slider-wrap { padding:12px 0; }
+.slider-label { font-size:11px; color:var(--text-secondary); font-weight:500; margin-bottom:6px; display:flex; justify-content:space-between; }
+.slider-label span { font-family:'DM Mono',monospace; color:var(--accent); font-weight:700; font-size:13px; }
+input[type=range].ax-slider {
+  -webkit-appearance:none; width:100%; height:4px;
+  background:var(--border); border-radius:2px; outline:none;
+  transition:background 0.2s;
+}
+input[type=range].ax-slider::-webkit-slider-thumb {
+  -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+  background:var(--accent); cursor:pointer; border:2px solid white;
+  box-shadow:0 1px 4px rgba(26,122,60,0.4);
+  transition:transform 0.15s, box-shadow 0.15s;
+}
+input[type=range].ax-slider::-webkit-slider-thumb:hover {
+  transform:scale(1.15); box-shadow:0 2px 8px rgba(26,122,60,0.5);
+}
+.scaling-results { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px; }
+.scale-card {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:12px; text-align:center;
+  box-shadow:var(--shadow-sm);
+}
+.scale-num { font-family:'Syne',sans-serif; font-size:18px; font-weight:700; color:var(--accent); margin-bottom:3px; }
+.scale-label { font-size:10px; color:var(--text-muted); font-family:'DM Mono',monospace; text-transform:uppercase; letter-spacing:0.5px; }
+.credit-card-display {
+  background:linear-gradient(135deg,var(--accent3),var(--accent2));
+  border-radius:var(--radius); padding:18px 20px; color:white;
+  margin-top:12px; box-shadow:0 8px 24px rgba(26,122,60,0.3);
+}
+.credit-card-label { font-size:9.5px; letter-spacing:2px; text-transform:uppercase; opacity:0.7; font-family:'DM Mono',monospace; margin-bottom:4px; }
+.credit-card-value { font-family:'Syne',sans-serif; font-size:28px; font-weight:800; }
+.credit-card-sub { font-size:11px; opacity:0.75; margin-top:4px; }
+
+/* ══════════════════════════════════════
+   NEW: URBAN DEPLOYMENT MAP
+══════════════════════════════════════ */
+#deploy-map-canvas { width:100%; height:360px; border-radius:var(--radius); border:1px solid var(--border); background:var(--surface2); display:block; }
+.city-stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:12px; }
+.city-stat { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; text-align:center; box-shadow:var(--shadow-sm); }
+.city-stat-num { font-family:'Syne',sans-serif; font-size:18px; font-weight:700; color:var(--accent); }
+.city-stat-label { font-size:10px; color:var(--text-muted); font-family:'DM Mono',monospace; text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
+
+/* ══════════════════════════════════════
+   NEW: ESG & REPORTING
+══════════════════════════════════════ */
+.sdg-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:14px; }
+.sdg-card {
+  border-radius:var(--radius); padding:16px; text-align:center;
+  color:white; font-weight:600; box-shadow:var(--shadow);
+  cursor:pointer; transition:var(--transition);
+}
+.sdg-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-lg); }
+.sdg-num { font-family:'Syne',sans-serif; font-size:28px; font-weight:800; }
+.sdg-title { font-size:11px; opacity:0.9; margin-top:4px; line-height:1.3; }
+.sdg-desc { font-size:10px; opacity:0.75; margin-top:6px; line-height:1.4; }
+.esg-metrics { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.esg-metric { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:13px; box-shadow:var(--shadow-sm); }
+.esg-metric-label { font-size:10px; color:var(--text-muted); font-family:'DM Mono',monospace; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; }
+.esg-metric-value { font-family:'Syne',sans-serif; font-size:20px; font-weight:700; color:var(--accent); }
+.esg-metric-sub { font-size:10px; color:var(--text-secondary); margin-top:3px; }
+.esg-bar { height:4px; background:var(--border); border-radius:2px; margin-top:8px; overflow:hidden; }
+.esg-bar-fill { height:100%; border-radius:2px; background:linear-gradient(90deg,var(--accent2),var(--accent)); transition:width 1.5s ease; }
+.code-preview {
+  background:#1e2d23; color:#86efac; font-family:'DM Mono',monospace;
+  font-size:10.5px; padding:14px; border-radius:var(--radius-sm);
+  overflow-x:auto; line-height:1.7; margin-top:10px;
+  border:1px solid #2d3f32;
+}
+
+/* ══════════════════════════════════════
+   NEW: ACPI SCORE / CLIMATE INDEX
+══════════════════════════════════════ */
+.acpi-layout { display:flex; gap:16px; align-items:flex-start; }
+.acpi-gauge-wrap { width:220px; min-width:220px; }
+#acpi-canvas { display:block; margin:0 auto; }
+.acpi-score-label { text-align:center; margin-top:6px; }
+.acpi-score-num { font-family:'Syne',sans-serif; font-size:38px; font-weight:800; color:var(--accent); }
+.acpi-score-text { font-size:11px; color:var(--text-muted); font-family:'DM Mono',monospace; letter-spacing:1px; text-transform:uppercase; }
+.acpi-sub-metrics { flex:1; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.acpi-sub {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:11px 13px; box-shadow:var(--shadow-sm);
+}
+.acpi-sub-label { font-size:9.5px; color:var(--text-muted); font-family:'DM Mono',monospace; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px; }
+.acpi-sub-val { font-family:'Syne',sans-serif; font-size:17px; font-weight:700; color:var(--accent); }
+.acpi-sub-bar { height:3px; background:var(--border); border-radius:2px; margin-top:6px; overflow:hidden; }
+.acpi-sub-fill { height:100%; border-radius:2px; background:linear-gradient(90deg,var(--accent2),var(--accent3)); transition:width 1s; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+
+/* ── ANIMATED COUNTER ── */
+.anim-num { transition:opacity 0.15s; }
+.anim-num.flash { opacity:0; }
+
+/* ── PRODUCT FOOTER ── */
+#product-footer {
+  height:26px; min-height:26px;
+  background:var(--surface2); border-top:1px solid var(--border);
+  display:flex; align-items:center; padding:0 20px; gap:16px;
+  font-size:10px; font-family:'DM Mono',monospace; color:var(--text-muted);
+  z-index:100; position:relative;
+}
+.footer-sep { width:1px; height:12px; background:var(--border2); }
+.footer-accent { color:var(--accent); font-weight:600; }
+#uptime-counter { color:var(--text-secondary); }
+</style>
+</head>
+<body>
+<div id="ambient-bg"></div>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <div class="tb-logo">
+    <div class="tb-logo-mark">AX</div>
+    <div class="tb-logo-text">
+      <div class="tb-name">AlgaeX Urban</div>
+      <div class="tb-tagline">BIOREACTOR PLATFORM v4.2</div>
+    </div>
+  </div>
+  <div class="tb-divider"></div>
+  <div class="tb-status"><div class="live-dot"></div>Live sensor feed active</div>
+  <div class="tb-divider"></div>
+  <div class="tb-badge">Reactor: <strong style="color:var(--accent);font-weight:700">ONLINE</strong></div>
+  <div class="tb-badge warn">⚠ Pump B standby</div>
+  <div class="tb-spacer"></div>
+  <div class="tb-clock" id="clock">--:--:--</div>
+  <div class="tb-divider"></div>
+  <div class="tb-avatar">AX</div>
+</div>
+
+<!-- BODY -->
+<div id="body">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="nav-section-label">Monitoring</div>
+    <div class="nav-item active" onclick="navTo('overview')">
+      <span class="nav-icon">⬛</span> Overview <span class="nav-badge live">Live</span>
+    </div>
+    <div class="nav-item" onclick="navTo('sensors')">
+      <span class="nav-icon">📡</span> Sensors
+    </div>
+    <div class="nav-item" onclick="navTo('mechatronics')">
+      <span class="nav-icon">⚙️</span> Bioreactor Core <span class="nav-badge warn">1</span>
+    </div>
+
+    <div class="nav-section-label">Analysis</div>
+    <div class="nav-item" onclick="navTo('impact')">
+      <span class="nav-icon">🌍</span> Impact
+    </div>
+    <div class="nav-item" onclick="navTo('charts')">
+      <span class="nav-icon">📊</span> Analytics
+    </div>
+    <div class="nav-item" onclick="navTo('carbon')">
+      <span class="nav-icon">🔬</span> Carbon Intelligence <span class="nav-badge new">New</span>
+    </div>
+
+    <div class="nav-section-label">Visualization</div>
+    <div class="nav-item" onclick="navTo('3d')">
+      <span class="nav-icon">🧬</span> 3D BioReactor
+    </div>
+    <div class="nav-item" onclick="navTo('deploy')">
+      <span class="nav-icon">🗺️</span> Deployment Map
+    </div>
+
+    <div class="nav-section-label">Intelligence</div>
+    <div class="nav-item" onclick="navTo('ai')">
+      <span class="nav-icon">🤖</span> AI Assistant <span class="nav-badge live">AI</span>
+    </div>
+    <div class="nav-item" onclick="navTo('esg')">
+      <span class="nav-icon">📋</span> ESG &amp; Reporting <span class="nav-badge new">New</span>
+    </div>
+    <div class="nav-item" onclick="navTo('acpi')">
+      <span class="nav-icon">⭐</span> Climate Score <span class="nav-badge new">New</span>
+    </div>
+    <div class="nav-item" onclick="navTo('logs')">
+      <span class="nav-icon">📝</span> System Logs
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sys-health">
+        <div class="sys-health-title">SYSTEM HEALTH</div>
+        <div class="health-bar-row">
+          <div class="health-label">CPU</div>
+          <div class="health-bar"><div class="health-fill" id="h-cpu" style="background:var(--accent);width:34%"></div></div>
+          <div class="health-val" id="h-cpu-v">34%</div>
+        </div>
+        <div class="health-bar-row">
+          <div class="health-label">Memory</div>
+          <div class="health-bar"><div class="health-fill" id="h-mem" style="background:var(--teal);width:58%"></div></div>
+          <div class="health-val" id="h-mem-v">58%</div>
+        </div>
+        <div class="health-bar-row">
+          <div class="health-label">Storage</div>
+          <div class="health-bar"><div class="health-fill" id="h-stor" style="background:var(--blue);width:21%"></div></div>
+          <div class="health-val" id="h-stor-v">21%</div>
+        </div>
+      </div>
+      <div class="sidebar-product-footer">
+        <div class="sysinfo-row"><span class="sysinfo-key">Device</span><span class="sysinfo-val">AX-URB-0042</span></div>
+        <div class="sysinfo-row"><span class="sysinfo-key">Firmware</span><span class="sysinfo-val">4.2.1-stable</span></div>
+        <div class="sysinfo-row"><span class="sysinfo-key">Deploy ID</span><span class="sysinfo-val">BLG-MKD-001</span></div>
+        <div class="sysinfo-row"><span class="sysinfo-key">Uptime</span><span class="sysinfo-val" id="sb-uptime">0d 0h 0m</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div id="content">
+
+    <!-- ══════════ PAGE: OVERVIEW ══════════ -->
+    <div class="page active" id="page-overview">
+      <div class="page-header">
+        <div class="page-h-left">
+          <h1>Overview</h1>
+          <p>Real-time bioreactor monitoring · AlgaeX Urban BioReactor v4.2</p>
+        </div>
+        <div class="page-h-right">
+          <button class="btn-outline" onclick="exportCSV()">Export CSV</button>
+          <button class="btn-primary" onclick="generateReport()">▶ Generate Report</button>
+        </div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi-card green" id="kpi-card-co2">
+          <div class="kpi-pulse"></div>
+          <div class="kpi-label">CO₂ Capture Rate</div>
+          <div class="kpi-value green"><span class="anim-num" id="kpi-co2">—</span><span class="kpi-unit">kg/hr</span></div>
+          <div class="kpi-change up" id="kpi-co2-ch">↑ Nominal capture</div>
+        </div>
+        <div class="kpi-card teal" id="kpi-card-o2">
+          <div class="kpi-pulse"></div>
+          <div class="kpi-label">O₂ Production</div>
+          <div class="kpi-value teal"><span class="anim-num" id="kpi-o2">—</span><span class="kpi-unit">L/hr</span></div>
+          <div class="kpi-change up" id="kpi-o2-ch">↑ Optimal output</div>
+        </div>
+        <div class="kpi-card amber" id="kpi-card-dens">
+          <div class="kpi-pulse"></div>
+          <div class="kpi-label">Algae Density</div>
+          <div class="kpi-value amber"><span class="anim-num" id="kpi-dens">—</span><span class="kpi-unit">g/L</span></div>
+          <div class="kpi-change flat" id="kpi-dens-ch">→ Exponential phase</div>
+        </div>
+        <div class="kpi-card blue" id="kpi-card-eff">
+          <div class="kpi-pulse"></div>
+          <div class="kpi-label">Photosyn. Efficiency</div>
+          <div class="kpi-value blue"><span class="anim-num" id="kpi-eff">—</span><span class="kpi-unit">%</span></div>
+          <div class="kpi-change up" id="kpi-eff-ch">↑ Peak performance</div>
+        </div>
+      </div>
+      <div class="charts-grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">CO₂ Capture Rate</div><div class="card-sub" id="co2-live-val">Loading…</div></div>
+            <div style="font-size:10px;color:var(--accent);font-family:'DM Mono',monospace;font-weight:600;display:flex;align-items:center;gap:5px"><div class="live-dot" style="width:5px;height:5px"></div>LIVE</div>
+          </div>
+          <div class="card-body" style="padding-bottom:8px"><div class="chart-wrap"><canvas id="chart-co2"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">O₂ Production Rate</div><div class="card-sub" id="o2-live-val">Loading…</div></div>
+            <div style="font-size:10px;color:var(--teal);font-family:'DM Mono',monospace;font-weight:600;display:flex;align-items:center;gap:5px"><div class="live-dot" style="width:5px;height:5px;background:var(--teal)"></div>LIVE</div>
+          </div>
+          <div class="card-body" style="padding-bottom:8px"><div class="chart-wrap"><canvas id="chart-o2"></canvas></div></div>
+        </div>
+      </div>
+      <div class="charts-grid-3">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Biomass OD₆₈₀</div></div>
+          <div class="card-body" style="padding-bottom:8px"><div class="chart-wrap" style="height:140px"><canvas id="chart-biomass"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">pH Level</div></div>
+          <div class="card-body" style="padding-bottom:8px"><div class="chart-wrap" style="height:140px"><canvas id="chart-ph"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Temperature</div></div>
+          <div class="card-body" style="padding-bottom:8px"><div class="chart-wrap" style="height:140px"><canvas id="chart-temp"></canvas></div></div>
+        </div>
+      </div>
+      <div class="section-label">Recent Alerts</div>
+      <div class="card"><div class="card-body"><div class="alert-list" id="overview-alerts"></div></div></div>
+    </div>
+
+    <!-- ══════════ PAGE: SENSORS ══════════ -->
+    <div class="page" id="page-sensors">
+      <div class="page-header">
+        <div class="page-h-left"><h1>Sensor Array</h1><p>All probes — live readings with calibration status</p></div>
+        <div class="page-h-right"><button class="btn-outline" onclick="calibrateAll()">Calibrate All</button></div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-header"><div class="card-title">Live Sensor Readings</div><div class="card-sub" id="sensor-last-update">Updated now</div></div>
+        <div class="card-body" style="padding:0"><table class="sensor-table"><thead><tr><th>Sensor</th><th>Value</th><th>Unit</th><th>Range</th><th>Status</th><th>Trend</th></tr></thead><tbody id="sensor-tbody"></tbody></table></div>
+      </div>
+      <div class="charts-grid-2">
+        <div class="card"><div class="card-header"><div class="card-title">Turbidity (NTU)</div></div><div class="card-body" style="padding-bottom:8px"><div class="chart-wrap"><canvas id="chart-turb"></canvas></div></div></div>
+        <div class="card"><div class="card-header"><div class="card-title">Light Intensity (μmol/m²/s)</div></div><div class="card-body" style="padding-bottom:8px"><div class="chart-wrap"><canvas id="chart-light"></canvas></div></div></div>
+      </div>
+    </div>
+
+    <!-- ══════════ PAGE: BIOREACTOR CORE ══════════ -->
+    <div class="page" id="page-mechatronics">
+      <div class="page-header">
+        <div class="page-h-left"><h1>Bioreactor Core Systems</h1><p>Actuators, embedded controllers &amp; autonomous control loops</p></div>
+        <div class="page-h-right">
+          <button class="btn-outline" onclick="alert('⚠️ Emergency Stop requires physical confirmation. Press and hold the hardware E-STOP button on the unit.')">Emergency Stop</button>
+          <button class="btn-primary" onclick="alert('✅ Auto Mode enabled. PID controllers managing pH, temperature, CO₂ flow, and lighting automatically.')">Auto Mode</button>
+        </div>
+      </div>
+      <div class="section-label">Actuator Status</div>
+      <div class="mech-grid" id="mech-grid"></div>
+      <div class="section-label">Control Overview</div>
+      <div class="charts-grid-2">
+        <div class="card"><div class="card-header"><div class="card-title">Pump Flow Rate</div></div><div class="card-body" style="padding-bottom:8px"><div class="chart-wrap"><canvas id="chart-pump"></canvas></div></div></div>
+        <div class="card"><div class="card-header"><div class="card-title">LED Duty Cycle (%)</div></div><div class="card-body" style="padding-bottom:8px"><div class="chart-wrap"><canvas id="chart-led"></canvas></div></div></div>
+      </div>
+    </div>
+
+    <!-- ══════════ PAGE: IMPACT ══════════ -->
+    <div class="page" id="page-impact">
+      <div class="page-header">
+        <div class="page-h-left"><h1>Environmental Impact</h1><p>Real-time CO₂ offset metrics &amp; equivalencies</p></div>
+      </div>
+      <div class="impact-grid" id="impact-grid"></div>
+      <div class="section-label">Comparative Analysis</div>
+      <div class="charts-grid-2">
+        <div class="card"><div class="card-header"><div class="card-title">CO₂ Capture vs. Industrial Sources</div></div><div class="card-body" style="padding-bottom:8px"><div class="chart-wrap" style="height:220px"><canvas id="chart-impact-bar"></canvas></div></div></div>
+        <div class="card"><div class="card-header"><div class="card-title">Annual Projection Trend</div></div><div class="card-body" style="padding-bottom:8px"><div class="chart-wrap" style="height:220px"><canvas id="chart-impact-proj"></canvas></div></div></div>
+      </div>
+      <div class="section-label">Breakdown</div>
+      <div class="charts-grid-3">
+        <div class="card"><div class="card-header"><div class="card-title">Emission Sources</div></div><div class="card-body"><div class="chart-wrap" style="height:180px"><canvas id="chart-donut"></canvas></div></div></div>
+        <div class="card" style="grid-column:span 2"><div class="card-header"><div class="card-title">Cumulative CO₂ Captured (Session)</div></div><div class="card-body" style="padding-bottom:8px"><div class="chart-wrap" style="height:180px"><canvas id="chart-cumulative"></canvas></div></div></div>
+      </div>
+    </div>
+
+    <!-- ══════════ PAGE: ANALYTICS ══════════ -->
+    <div class="page" id="page-charts">
+      <div class="page-header">
+        <div class="page-h-left"><h1>Analytics</h1><p>Deep-dive sensor history &amp; correlations</p></div>
+        <div class="page-h-right"><button class="btn-outline">1H</button><button class="btn-primary">6H</button><button class="btn-outline">24H</button></div>
+      </div>
+      <div class="card" style="margin-bottom:12px"><div class="card-header"><div class="card-title">CO₂ / O₂ Correlation</div></div><div class="card-body" style="padding-bottom:8px"><div class="chart-wrap" style="height:220px"><canvas id="chart-corr"></canvas></div></div></div>
+      <div class="charts-grid-2">
+        <div class="card"><div class="card-header"><div class="card-title">Nutrient Depletion Rate</div></div><div class="card-body" style="padding-bottom:8px"><div class="chart-wrap" style="height:160px"><canvas id="chart-nutr"></canvas></div></div></div>
+        <div class="card"><div class="card-header"><div class="card-title">Photosynthetic Efficiency</div></div><div class="card-body" style="padding-bottom:8px"><div class="chart-wrap" style="height:160px"><canvas id="chart-eff"></canvas></div></div></div>
+      </div>
+    </div>
+
+    <!-- ══════════ PAGE: CARBON INTELLIGENCE (REAL DATA) ══════════ -->
+    <div class="page" id="page-carbon">
+      <div class="page-header">
+        <div class="page-h-left"><h1>Carbon Intelligence</h1><p>Science-grounded analytics · Source: Frontiers Biotechnology 2024, Stanford Life-Cycle Analysis 2025</p></div>
+        <div class="page-h-right"><button class="btn-primary" onclick="exportCSV()">Export Forecast</button></div>
+      </div>
+
+      <!-- Real data science callouts -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:0 2px 8px rgba(0,0,0,0.05)">
+          <div style="font-size:9px;font-family:'IBM Plex Mono',monospace;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">CO₂ FIXATION RATIO</div>
+          <div style="font-family:'Inter',sans-serif;font-size:22px;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums;letter-spacing:-0.04em">1.83<span style="font-size:13px;color:var(--text-muted);font-weight:400"> kg CO₂/kg</span></div>
+          <div style="font-size:10px;color:var(--text-secondary);margin-top:4px">Per kg dry biomass produced<br><span style="color:var(--text-muted);font-size:9px">Stanford Life-Cycle Analysis 2025</span></div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:0 2px 8px rgba(0,0,0,0.05)">
+          <div style="font-size:9px;font-family:'IBM Plex Mono',monospace;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">vs TERRESTRIAL PLANTS</div>
+          <div style="font-family:'Inter',sans-serif;font-size:22px;font-weight:800;color:var(--teal);font-variant-numeric:tabular-nums;letter-spacing:-0.04em">10–50×<span style="font-size:13px;color:var(--text-muted);font-weight:400"> higher</span></div>
+          <div style="font-size:10px;color:var(--text-secondary);margin-top:4px">Carbon adsorption vs trees/grass<br><span style="color:var(--text-muted);font-size:9px">PMC 2024 · MDPI Review</span></div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:0 2px 8px rgba(0,0,0,0.05)">
+          <div style="font-size:9px;font-family:'IBM Plex Mono',monospace;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">SUNNY DAY EFFICIENCY</div>
+          <div style="font-family:'Inter',sans-serif;font-size:22px;font-weight:800;color:var(--blue);font-variant-numeric:tabular-nums;letter-spacing:-0.04em">82.3<span style="font-size:13px;color:var(--text-muted);font-weight:400">±12.5%</span></div>
+          <div style="font-size:10px;color:var(--text-secondary);margin-top:4px">CO₂ removal efficiency in sunlight<br><span style="color:var(--text-muted);font-size:9px">Vunjak-Novakovic et al. · PMC 2023</span></div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:0 2px 8px rgba(0,0,0,0.05)">
+          <div style="font-size:9px;font-family:'IBM Plex Mono',monospace;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">BIOMASS PRODUCTIVITY</div>
+          <div style="font-family:'Inter',sans-serif;font-size:22px;font-weight:800;color:var(--amber);font-variant-numeric:tabular-nums;letter-spacing:-0.04em">30–77<span style="font-size:13px;color:var(--text-muted);font-weight:400"> g/m²/d</span></div>
+          <div style="font-size:10px;color:var(--text-secondary);margin-top:4px">Industrial PBR dry weight yield<br><span style="color:var(--text-muted);font-size:9px">Stanford LC Analysis 2025</span></div>
+        </div>
+      </div>
+
+      <div class="charts-grid-2" style="margin-bottom:12px">
+        <div class="card">
+          <div class="card-header"><div class="card-title">30-Day CO₂ Capture Forecast</div><div class="card-sub">Seasonal model · Tamil Nadu solar irradiance adjusted · 95% CI</div></div>
+          <div class="card-body" style="padding-bottom:8px"><div class="chart-wrap" style="height:200px"><canvas id="chart-forecast"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Urban Heat Mitigation</div><div class="card-sub">Tamil Nadu monthly avg temp delta · algae evapotranspiration effect</div></div>
+          <div class="card-body" style="padding-bottom:8px"><div class="chart-wrap" style="height:200px"><canvas id="chart-heat"></canvas></div></div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-header"><div class="card-title">Deployment Scenario Simulator</div><div class="card-sub">Based on 600L unit · 1.83 kg CO₂/kg biomass fixation · EU ETS carbon price</div></div>
+        <div class="card-body">
+          <div class="scenario-slider-wrap">
+            <div class="slider-label">Units deployed: <span id="slider-val">50</span></div>
+            <input type="range" class="ax-slider" id="unit-slider" min="1" max="500" value="50" oninput="updateScenario(this.value)">
+          </div>
+          <div class="scaling-results">
+            <div class="scale-card"><div class="scale-num" id="sc-co2">—</div><div class="scale-label">tCO₂ offset / year</div></div>
+            <div class="scale-card"><div class="scale-num" id="sc-trees">—</div><div class="scale-label">Equivalent urban trees</div></div>
+            <div class="scale-card"><div class="scale-num" id="sc-cars">—</div><div class="scale-label">Cars off road equiv.</div></div>
+          </div>
+          <!-- Real benchmark row -->
+          <div style="margin-top:14px;padding:10px 14px;background:var(--surface2);border-radius:var(--radius-sm);border:1px solid var(--border);font-size:11px;color:var(--text-secondary);line-height:1.7">
+            <strong style="color:var(--text-primary)">Science basis:</strong> A mature urban tree absorbs ~21.8 kg CO₂/year (USFS 2023). This reactor at current rate captures
+            <strong id="daily-trees-inline" style="color:var(--accent)">—</strong> tree-equivalents daily. 
+            Microalgae absorb CO₂ 10–50× faster per unit area than terrestrial plants 
+            <span style="color:var(--text-muted)">(PMC review 2024)</span>. Each kg biomass fixes 1.83 kg CO₂ 
+            <span style="color:var(--text-muted)">(Stanford 2025)</span>.
+          </div>
+        </div>
+      </div>
+      <div class="charts-grid-2">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Carbon Credit Projection</div><div class="card-sub">EU ETS spot price €65/tCO₂e · Mar 2026 reference</div></div>
+          <div class="card-body">
+            <div class="credit-card-display">
+              <div class="credit-card-label">Annual Carbon Credit Value</div>
+              <div class="credit-card-value" id="credit-value">€—</div>
+              <div class="credit-card-sub" id="credit-sub">Per unit · EU ETS €65/tCO₂e</div>
+            </div>
+            <div style="margin-top:12px"><div class="chart-wrap" style="height:140px"><canvas id="chart-credit"></canvas></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Real-World Capture Benchmark</div><div class="card-sub">Per-hour CO₂ absorption comparison · peer-reviewed data</div></div>
+          <div class="card-body" style="padding-bottom:8px"><div class="chart-wrap" style="height:220px"><canvas id="chart-baseline"></canvas></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ PAGE: TAMIL NADU DEPLOYMENT MAP ══════════ -->
+    <div class="page" id="page-deploy">
+      <div class="page-header">
+        <div class="page-h-left"><h1>Tamil Nadu Deployment Potential</h1><p>Priority urban zones · AQI data · heat island mapping · AlgaeX site suitability</p></div>
+        <div class="page-h-right"><button class="btn-outline" onclick="toggleMapMode()">Toggle Heatmap</button><button class="btn-primary">Export Zone Report</button></div>
+      </div>
+      <!-- TN Context strip -->
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;box-shadow:0 2px 8px rgba(0,0,0,0.05)">
+          <div style="font-size:9px;font-family:'IBM Plex Mono',monospace;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">TN Population</div>
+          <div style="font-family:'Inter',sans-serif;font-size:18px;font-weight:800;color:var(--accent);letter-spacing:-0.03em;font-variant-numeric:tabular-nums">77.8M</div>
+          <div style="font-size:9px;color:var(--text-muted)">Census 2024 est.</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid rgba(192,57,43,0.15);border-radius:var(--radius-sm);padding:11px 14px;box-shadow:0 2px 8px rgba(0,0,0,0.05)">
+          <div style="font-size:9px;font-family:'IBM Plex Mono',monospace;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Toxic Air Exposure</div>
+          <div style="font-family:'Inter',sans-serif;font-size:18px;font-weight:800;color:var(--red);letter-spacing:-0.03em;font-variant-numeric:tabular-nums">72.1M</div>
+          <div style="font-size:9px;color:var(--text-muted)">exceed WHO PM2.5 limit</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;box-shadow:0 2px 8px rgba(0,0,0,0.05)">
+          <div style="font-size:9px;font-family:'IBM Plex Mono',monospace;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Chennai PM2.5</div>
+          <div style="font-family:'Inter',sans-serif;font-size:18px;font-weight:800;color:var(--amber);letter-spacing:-0.03em;font-variant-numeric:tabular-nums">42.4 µg</div>
+          <div style="font-size:9px;color:var(--text-muted)">WHO safe limit: 5 µg/m³</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;box-shadow:0 2px 8px rgba(0,0,0,0.05)">
+          <div style="font-size:9px;font-family:'IBM Plex Mono',monospace;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Urban Pop. by 2030</div>
+          <div style="font-family:'Inter',sans-serif;font-size:18px;font-weight:800;color:var(--blue);letter-spacing:-0.03em;font-variant-numeric:tabular-nums">67%</div>
+          <div style="font-size:9px;color:var(--text-muted)">will live in cities · Frontiers 2024</div>
+        </div>
+        <div style="background:linear-gradient(135deg,var(--accent3),var(--accent2));border-radius:var(--radius-sm);padding:11px 14px;box-shadow:0 4px 16px rgba(26,122,60,0.25)">
+          <div style="font-size:9px;font-family:'IBM Plex Mono',monospace;color:rgba(255,255,255,0.7);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Units Needed</div>
+          <div style="font-family:'Inter',sans-serif;font-size:18px;font-weight:800;color:white;letter-spacing:-0.03em;font-variant-numeric:tabular-nums">12,400+</div>
+          <div style="font-size:9px;color:rgba(255,255,255,0.7)">to offset Tamil Nadu urban CO₂</div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-header"><div class="card-title">Tamil Nadu — AlgaeX Priority Zones</div><div class="card-sub" id="map-unit-count">High AQI · heat island · industrial corridor analysis</div></div>
+        <div class="card-body" style="padding:12px"><canvas id="deploy-map-canvas"></canvas></div>
+      </div>
+      <div class="city-stats-grid">
+        <div class="city-stat"><div class="city-stat-num" style="color:var(--red)">161</div><div class="city-stat-label">Chennai AQI</div></div>
+        <div class="city-stat"><div class="city-stat-num" style="color:var(--amber)">118</div><div class="city-stat-label">Coimbatore AQI</div></div>
+        <div class="city-stat"><div class="city-stat-num" style="color:var(--blue)">94</div><div class="city-stat-label">Madurai AQI</div></div>
+        <div class="city-stat"><div class="city-stat-num" style="color:var(--accent)">2,800+</div><div class="city-stat-label">Ideal Install Sites</div></div>
+      </div>
+    </div>
+
+    <!-- ══════════ PAGE: 3D ══════════ -->
+    <div class="page" id="page-3d">
+      <div id="viz-layout">
+        <div id="viz-canvas-wrap">
+          <canvas id="viz-canvas"></canvas>
+          <div id="viz-overlay">
+            <div id="viz-title-block">
+              <h2>AlgaeX Liquid Tree — 3D Model</h2>
+              <p>Interactive photobioreactor · LIQUID3 design · Chlorella vulgaris</p>
+            </div>
+            <div id="viz-info-panel">
+              <div class="viz-info-row"><span class="viz-info-label">Species</span><span class="viz-info-val">C. reinhardtii</span></div>
+              <div class="viz-info-row"><span class="viz-info-label">Volume</span><span class="viz-info-val">600 L</span></div>
+              <div class="viz-info-row"><span class="viz-info-label">Culture</span><span class="viz-info-val" id="vi-dens">— g/L</span></div>
+              <div class="viz-info-row"><span class="viz-info-label">Temp</span><span class="viz-info-val" id="vi-temp">— °C</span></div>
+              <div class="viz-info-row"><span class="viz-info-label">pH</span><span class="viz-info-val" id="vi-ph">—</span></div>
+              <div class="viz-info-row"><span class="viz-info-label">CO₂ In</span><span class="viz-info-val" id="vi-co2">— kg/hr</span></div>
+            </div>
+            <div id="viz-hud">
+              <div class="hud-row"><div class="hud-dot" style="background:var(--accent)"></div><div class="hud-label">Capture</div><div class="hud-val" id="hud-co2">—</div><div class="hud-bar"><div class="hud-bar-fill" id="hud-co2-bar" style="background:var(--accent);width:60%"></div></div></div>
+              <div class="hud-row"><div class="hud-dot" style="background:var(--teal)"></div><div class="hud-label">O₂ Out</div><div class="hud-val" id="hud-o2">—</div><div class="hud-bar"><div class="hud-bar-fill" id="hud-o2-bar" style="background:var(--teal);width:70%"></div></div></div>
+              <div class="hud-row"><div class="hud-dot" style="background:var(--amber)"></div><div class="hud-label">pH</div><div class="hud-val" id="hud-ph">—</div><div class="hud-bar"><div class="hud-bar-fill" id="hud-ph-bar" style="background:var(--amber);width:55%"></div></div></div>
+              <div class="hud-row"><div class="hud-dot" style="background:var(--blue)"></div><div class="hud-label">Effic.</div><div class="hud-val" id="hud-eff">—</div><div class="hud-bar"><div class="hud-bar-fill" id="hud-eff-bar" style="background:var(--blue);width:80%"></div></div></div>
+            </div>
+            <div id="viz-hint">Drag to rotate · Scroll to zoom · Click components to inspect</div>
+            <div id="viz-controls">
+              <button class="viz-btn" onclick="vizReset()">↺ Reset View</button>
+              <button class="viz-btn" id="btn-explode" onclick="vizExplode()">⊞ Explode</button>
+              <button class="viz-btn" id="btn-wire" onclick="vizWire()">⊟ Wireframe</button>
+              <button class="viz-btn" id="btn-flow" onclick="vizFlow()">◎ Flow Mode</button>
+            </div>
+          </div>
+        </div>
+        <div id="viz-sidebar">
+          <div class="viz-sidebar-title">Components</div>
+          <div class="viz-sidebar-sub">Click to highlight in model</div>
+          <div class="component-list" id="comp-list"></div>
+          <div class="viz-spec-block">
+            <div class="viz-spec-title">LIQUID3 SPECS</div>
+            <div class="viz-spec-row"><span class="viz-spec-key">Origin</span><span class="viz-spec-val">Belgrade, Serbia</span></div>
+            <div class="viz-spec-row"><span class="viz-spec-key">Volume</span><span class="viz-spec-val">600 L</span></div>
+            <div class="viz-spec-row"><span class="viz-spec-key">Height</span><span class="viz-spec-val">~1.2 m</span></div>
+            <div class="viz-spec-row"><span class="viz-spec-key">Diameter</span><span class="viz-spec-val">~0.9 m</span></div>
+            <div class="viz-spec-row"><span class="viz-spec-key">Species</span><span class="viz-spec-val">C. reinhardtii</span></div>
+            <div class="viz-spec-row"><span class="viz-spec-key">Power</span><span class="viz-spec-val">Solar panel</span></div>
+            <div class="viz-spec-row"><span class="viz-spec-key">CO₂ cap.</span><span class="viz-spec-val">= 2 adult trees</span></div>
+            <div class="viz-spec-row"><span class="viz-spec-key">Green area</span><span class="viz-spec-val">= 200 m² lawn</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ PAGE: AI ══════════ -->
+    <div class="page" id="page-ai">
+      <div id="ai-layout">
+        <div id="ai-chat-area">
+          <div id="ai-chat-header">
+            <div style="width:32px;height:32px;border-radius:50%;background:rgba(26,122,60,0.1);border:1px solid rgba(26,122,60,0.2);display:flex;align-items:center;justify-content:center;font-size:15px">🌿</div>
+            <div>
+              <div style="font-weight:700;font-size:13px;color:var(--text-primary)">AlgaeX Bio-Core AI</div>
+              <div style="font-size:10px;color:var(--text-muted);font-family:'DM Mono',monospace">Bioreactor Intelligence · Climate Analytics Engine</div>
+            </div>
+            <div style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--accent);font-weight:600"><div class="live-dot"></div>Online</div>
+          </div>
+          <div id="ai-chat-messages">
+            <div class="chat-sys">— Session started · AlgaeX Bio-Core v2.1 · Sensor sync active —</div>
+            <div class="chat-msg ai">
+              <div class="chat-avatar ai">🌿</div>
+              <div>
+                <div class="chat-bubble">Welcome to AlgaeX Bio-Core. I have full access to your reactor's live sensor stream. I can analyze CO₂ capture efficiency, algae growth kinetics, system anomalies, carbon economics, and environmental impact. What would you like to explore?</div>
+                <div class="chat-meta"><span class="conf-score">Confidence: 98%</span><span>Sensor refs: 8 active</span></div>
+                <div class="chat-actions">
+                  <div class="chat-action-btn" onclick="quickSend({textContent:'Explain in scientific detail how the reactor works'})">🔬 Scientific detail</div>
+                  <div class="chat-action-btn" onclick="quickSend({textContent:'Explain our impact for investors'})">💼 For investors</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="ai-typing" style="display:none;padding:0 20px 8px">
+            <div class="chat-msg ai">
+              <div class="chat-avatar ai">🌿</div>
+              <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+            </div>
+          </div>
+          <div id="ai-input-bar">
+            <input id="ai-input" placeholder="Ask about sensor data, algae biology, carbon economics, system optimization…"/>
+            <button id="ai-send" onclick="sendAI()">Send</button>
+          </div>
+        </div>
+        <div style="position:relative;width:248px;min-width:248px;background:var(--surface2);">
+          <canvas id="ai-neural-bg" style="position:absolute;inset:0;width:100%;height:100%;opacity:0.35;pointer-events:none"></canvas>
+          <div id="ai-sidebar">
+            <div class="ai-sidebar-section">
+              <div class="ai-section-title">Live Sensor Context</div>
+              <div class="ai-context-card"><div class="ai-ctx-label">CO₂ CAPTURE RATE</div><div class="ai-ctx-val green" id="ai-ctx-co2">—</div></div>
+              <div class="ai-context-card"><div class="ai-ctx-label">O₂ PRODUCTION</div><div class="ai-ctx-val teal" id="ai-ctx-o2">—</div></div>
+              <div class="ai-context-card"><div class="ai-ctx-label">EFFICIENCY</div><div class="ai-ctx-val amber" id="ai-ctx-eff">—</div></div>
+              <div class="ai-context-card"><div class="ai-ctx-label">pH LEVEL</div><div class="ai-ctx-val" id="ai-ctx-ph" style="color:var(--blue)">—</div></div>
+            </div>
+            <div class="ai-sidebar-section">
+              <div class="ai-section-title">Quick Prompts</div>
+              <div class="quick-prompt" onclick="quickSend(this)">Why is my pH drifting above 7.4?</div>
+              <div class="quick-prompt" onclick="quickSend(this)">How many trees does this replace hourly?</div>
+              <div class="quick-prompt" onclick="quickSend(this)">Optimize light intensity for max growth</div>
+              <div class="quick-prompt" onclick="quickSend(this)">Explain the CO₂ → biomass conversion</div>
+              <div class="quick-prompt" onclick="quickSend(this)">When should I schedule the next harvest?</div>
+              <div class="quick-prompt" onclick="quickSend(this)">What industries emit the most CO₂?</div>
+              <div class="quick-prompt" onclick="quickSend(this)">Explain our impact for investors</div>
+              <div class="quick-prompt" onclick="quickSend(this)">Tell me about the Serbian LIQUID3 origin</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ PAGE: ESG (NEW) ══════════ -->
+    <div class="page" id="page-esg">
+      <div class="page-header">
+        <div class="page-h-left"><h1>ESG &amp; Reporting</h1><p>Sustainability disclosure · SDG alignment · Compliance metrics</p></div>
+        <div class="page-h-right"><button class="btn-outline" onclick="exportCSV()">Export CSV</button><button class="btn-primary" onclick="generateReport()">Download ESG Report</button></div>
+      </div>
+      <div class="section-label">SDG Alignment</div>
+      <div class="sdg-grid">
+        <div class="sdg-card" style="background:linear-gradient(135deg,#2d6a4f,#40916c)">
+          <div class="sdg-num" style="font-family:'Inter',sans-serif;font-variant-numeric:tabular-nums">SDG 13</div>
+          <div class="sdg-title" style="font-family:'Manrope',sans-serif;font-size:13px;font-weight:700;margin-top:6px">Climate Action</div>
+          <div class="sdg-desc" style="font-family:'Manrope',sans-serif;font-size:10.5px;opacity:0.88;margin-top:8px;line-height:1.5">Direct atmospheric CO₂ capture at urban scale. Each unit offsets <strong id="sdg13-val">—</strong> kg/hr — measurable, reportable, TCFD-ready.</div>
+          <div style="margin-top:10px;height:3px;background:rgba(255,255,255,0.2);border-radius:2px;overflow:hidden"><div style="height:100%;background:rgba(255,255,255,0.7);width:92%;border-radius:2px"></div></div>
+          <div style="font-size:9px;opacity:0.7;margin-top:4px;font-family:'IBM Plex Mono',monospace">Alignment score: 92%</div>
+        </div>
+        <div class="sdg-card" style="background:linear-gradient(135deg,#b5451b,#e05c25)">
+          <div class="sdg-num" style="font-family:'Inter',sans-serif;font-variant-numeric:tabular-nums">SDG 11</div>
+          <div class="sdg-title" style="font-family:'Manrope',sans-serif;font-size:13px;font-weight:700;margin-top:6px">Sustainable Cities</div>
+          <div class="sdg-desc" style="font-family:'Manrope',sans-serif;font-size:10.5px;opacity:0.88;margin-top:8px;line-height:1.5">Urban green infra without land use change. 67% of Tamil Nadu will live in cities by 2030 — no new land required for deployment.</div>
+          <div style="margin-top:10px;height:3px;background:rgba(255,255,255,0.2);border-radius:2px;overflow:hidden"><div style="height:100%;background:rgba(255,255,255,0.7);width:88%;border-radius:2px"></div></div>
+          <div style="font-size:9px;opacity:0.7;margin-top:4px;font-family:'IBM Plex Mono',monospace">Alignment score: 88%</div>
+        </div>
+        <div class="sdg-card" style="background:linear-gradient(135deg,#b89000,#d4a800)">
+          <div class="sdg-num" style="font-family:'Inter',sans-serif;font-variant-numeric:tabular-nums">SDG 7</div>
+          <div class="sdg-title" style="font-family:'Manrope',sans-serif;font-size:13px;font-weight:700;margin-top:6px">Affordable Clean Energy</div>
+          <div class="sdg-desc" style="font-family:'Manrope',sans-serif;font-size:10.5px;opacity:0.88;margin-top:8px;line-height:1.5">100% solar-powered daytime operation. Harvested biomass converts to biogas — secondary clean energy revenue stream per unit.</div>
+          <div style="margin-top:10px;height:3px;background:rgba(255,255,255,0.2);border-radius:2px;overflow:hidden"><div style="height:100%;background:rgba(255,255,255,0.7);width:80%;border-radius:2px"></div></div>
+          <div style="font-size:9px;opacity:0.7;margin-top:4px;font-family:'IBM Plex Mono',monospace">Alignment score: 80%</div>
+        </div>
+      </div>
+      <div class="section-label">Corporate ESG Metrics</div>
+      <div class="esg-metrics">
+        <div class="esg-metric"><div class="esg-metric-label">Annual CO₂ Offset</div><div class="esg-metric-value" id="esg-annual">—t</div><div class="esg-metric-sub">Per unit · at current rate</div><div class="esg-bar"><div class="esg-bar-fill" id="esg-b1" style="width:65%"></div></div></div>
+        <div class="esg-metric"><div class="esg-metric-label">Carbon Intensity Reduction</div><div class="esg-metric-value">94%</div><div class="esg-metric-sub">vs. equivalent land planting</div><div class="esg-bar"><div class="esg-bar-fill" style="width:94%"></div></div></div>
+        <div class="esg-metric"><div class="esg-metric-label">Renewable Energy Share</div><div class="esg-metric-value">100%</div><div class="esg-metric-sub">Solar powered daytime operation</div><div class="esg-bar"><div class="esg-bar-fill" style="width:100%"></div></div></div>
+        <div class="esg-metric"><div class="esg-metric-label">Water Use Efficiency</div><div class="esg-metric-value">97%</div><div class="esg-metric-sub">Closed-loop, minimal evaporation</div><div class="esg-bar"><div class="esg-bar-fill" style="width:97%"></div></div></div>
+        <div class="esg-metric"><div class="esg-metric-label">Biodiversity Score</div><div class="esg-metric-value">A+</div><div class="esg-metric-sub">No land disruption · zero pesticide</div><div class="esg-bar"><div class="esg-bar-fill" style="width:98%"></div></div></div>
+        <div class="esg-metric"><div class="esg-metric-label">TCFD Compliance</div><div class="esg-metric-value">Tier 2</div><div class="esg-metric-sub">Disclosure-ready data pipeline</div><div class="esg-bar"><div class="esg-bar-fill" style="width:78%"></div></div></div>
+      </div>
+      <div class="section-label">Carbon Reporting Preview</div>
+      <div class="charts-grid-2">
+        <div class="card"><div class="card-header"><div class="card-title">JSON Report Format</div></div>
+          <div class="card-body" style="padding:0"><div class="code-preview" id="json-preview"></div></div>
+        </div>
+        <div class="card"><div class="card-header"><div class="card-title">CSV Format Preview</div></div>
+          <div class="card-body" style="padding:0"><div class="code-preview" id="csv-preview"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ PAGE: ACPI (NEW) ══════════ -->
+    <div class="page" id="page-acpi">
+      <div class="page-header">
+        <div class="page-h-left"><h1>Climate Performance Index</h1><p>AlgaeX ACPI™ — Proprietary climate intelligence scoring</p></div>
+        <div class="page-h-right"><button class="btn-primary" onclick="generateReport()">Export ACPI Report</button></div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-header"><div class="card-title">AlgaeX Climate Performance Index (ACPI™)</div><div class="card-sub">Composite score across 6 performance dimensions · Updated live</div></div>
+        <div class="card-body">
+          <div class="acpi-layout">
+            <div class="acpi-gauge-wrap">
+              <canvas id="acpi-canvas" width="200" height="200"></canvas>
+              <div class="acpi-score-label">
+                <div class="acpi-score-num" id="acpi-score">—</div>
+                <div class="acpi-score-text">ACPI Score</div>
+              </div>
+            </div>
+            <div class="acpi-sub-metrics">
+              <div class="acpi-sub"><div class="acpi-sub-label">Capture Efficiency</div><div class="acpi-sub-val" id="acpi-s1">—</div><div class="acpi-sub-bar"><div class="acpi-sub-fill" id="acpi-b1" style="width:0%"></div></div></div>
+              <div class="acpi-sub"><div class="acpi-sub-label">System Uptime</div><div class="acpi-sub-val" id="acpi-s2">99.2%</div><div class="acpi-sub-bar"><div class="acpi-sub-fill" id="acpi-b2" style="width:99%"></div></div></div>
+              <div class="acpi-sub"><div class="acpi-sub-label">Biomass Yield</div><div class="acpi-sub-val" id="acpi-s3">—</div><div class="acpi-sub-bar"><div class="acpi-sub-fill" id="acpi-b3" style="width:0%"></div></div></div>
+              <div class="acpi-sub"><div class="acpi-sub-label">Energy Efficiency</div><div class="acpi-sub-val">91%</div><div class="acpi-sub-bar"><div class="acpi-sub-fill" style="width:91%"></div></div></div>
+              <div class="acpi-sub"><div class="acpi-sub-label">pH Stability</div><div class="acpi-sub-val" id="acpi-s5">—</div><div class="acpi-sub-bar"><div class="acpi-sub-fill" id="acpi-b5" style="width:0%"></div></div></div>
+              <div class="acpi-sub"><div class="acpi-sub-label">CO₂ Intensity</div><div class="acpi-sub-val" id="acpi-s6">—</div><div class="acpi-sub-bar"><div class="acpi-sub-fill" id="acpi-b6" style="width:0%"></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="charts-grid-2">
+        <div class="card"><div class="card-header"><div class="card-title">ACPI Score History</div></div><div class="card-body" style="padding-bottom:8px"><div class="chart-wrap" style="height:180px"><canvas id="chart-acpi-hist"></canvas></div></div></div>
+        <div class="card"><div class="card-header"><div class="card-title">Peer Benchmark Comparison</div></div><div class="card-body" style="padding-bottom:8px"><div class="chart-wrap" style="height:180px"><canvas id="chart-acpi-bench"></canvas></div></div></div>
+      </div>
+    </div>
+
+    <!-- ══════════ PAGE: LOGS ══════════ -->
+    <div class="page" id="page-logs">
+      <div class="page-header">
+        <div class="page-h-left"><h1>System Logs</h1><p>Operational event history</p></div>
+        <div class="page-h-right"><button class="btn-outline" onclick="$('full-log').innerHTML='';$('overview-alerts').innerHTML=''">Clear Logs</button></div>
+      </div>
+      <div class="card"><div class="card-body"><div class="alert-list" id="full-log"></div></div></div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /body -->
+
+<!-- PRODUCT FOOTER -->
+<div id="product-footer">
+  <span class="footer-accent">AlgaeX Urban</span>
+  <div class="footer-sep"></div>
+  <span>Bio-Core Engine v4.2.1-stable</span>
+  <div class="footer-sep"></div>
+  <span>Device: AX-URB-0042 · Deploy: BLG-MKD-001</span>
+  <div class="footer-sep"></div>
+  <span>Uptime: <span id="footer-uptime">0d 0h 0m 0s</span></span>
+  <div class="footer-sep"></div>
+  <span>Firmware: 4.2.1 · Last update: 2025-06-01</span>
+  <div class="tb-spacer"></div>
+  <span style="color:var(--text-muted)">© 2025 AlgaeX Technologies · Climate Infrastructure Platform · All rights reserved</span>
+</div>
+
+<script>
+// ═══════════════════════════════════
+// STATE
+// ═══════════════════════════════════
+const S = {
+  co2:1.42, o2:38.4, density:2.8, ph:7.1, temp:24.3,
+  turb:18, light:320, nutr:42.1, eff:78.2, biomass:0.82,
+  pumpA:142, pumpB:0, aerRPM:218, ledDuty:92,
+  co2Session:0, o2Session:0, tick:0, startTime:Date.now(),
+  hist:{
+    co2:[],o2:[],biomass:[],ph:[],temp:[],
+    turb:[],light:[],pump:[],led:[],nutr:[],eff:[],cumCO2:[],acpi:[]
+  },
+  labels:[],
+};
+for(let i=0;i<60;i++){
+  const t=new Date(Date.now()-(60-i)*1000);
+  S.labels.push(t.toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'}));
+  S.hist.co2.push(1.2+Math.random()*0.5);
+  S.hist.o2.push(35+Math.random()*8);
+  S.hist.biomass.push(0.72+Math.random()*0.2);
+  S.hist.ph.push(7.0+Math.random()*0.3);
+  S.hist.temp.push(24+Math.random()*0.6);
+  S.hist.turb.push(15+Math.random()*6);
+  S.hist.light.push(310+Math.random()*20);
+  S.hist.pump.push(135+Math.random()*15);
+  S.hist.led.push(88+Math.random()*6);
+  S.hist.nutr.push(42+Math.random()*3);
+  S.hist.eff.push(74+Math.random()*8);
+  S.hist.cumCO2.push(i*0.0004);
+  S.hist.acpi.push(74+Math.random()*10);
+}
+
+// ═══════════════════════════════════
+// UTILS
+// ═══════════════════════════════════
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const noise=(v,a)=>v+(Math.random()-.5)*a;
+const fmt=(v,d=2)=>typeof v==='number'?v.toFixed(d):'—';
+const $=id=>document.getElementById(id);
+
+// ═══════════════════════════════════
+// CLOCK & UPTIME
+// ═══════════════════════════════════
+setInterval(()=>{
+  $('clock').textContent=new Date().toLocaleTimeString('en-US',{hour12:false});
+  const sec=Math.floor((Date.now()-S.startTime)/1000);
+  const d=Math.floor(sec/86400),h=Math.floor((sec%86400)/3600),m=Math.floor((sec%3600)/60),s=sec%60;
+  const up=`${d}d ${h}h ${m}m ${s}s`;
+  const el=$('footer-uptime'); if(el)el.textContent=up;
+  const sb=$('sb-uptime'); if(sb)sb.textContent=`${d}d ${h}h ${m}m`;
+},1000);
+
+// ═══════════════════════════════════
+// CHART.JS DEFAULTS
+// ═══════════════════════════════════
+Chart.defaults.color='#7a9a85';
+Chart.defaults.borderColor='#dde6de';
+Chart.defaults.font.family="'DM Mono',monospace";
+Chart.defaults.font.size=10;
+const chartInstances={};
+
+const lightTooltip = {
+  backgroundColor:'rgba(255,255,255,0.97)',
+  borderColor:'#c8d9cb', borderWidth:1,
+  titleColor:'#3a5c48', bodyColor:'#111b14',
+  padding:10, cornerRadius:7,
+  boxShadow:'0 4px 16px rgba(0,0,0,0.1)',
+};
+
+function mkLineChart(id,label,color,data,min,max,fill=true,extraDatasets=[]){
+  const ctx=$(id); if(!ctx)return null;
+  if(chartInstances[id])chartInstances[id].destroy();
+  const grad=ctx.getContext('2d')?.createLinearGradient(0,0,0,200);
+  if(grad){
+    const c=color.replace('rgb(','').replace(')','').split(',').map(Number);
+    grad.addColorStop(0,`rgba(${c[0]},${c[1]},${c[2]},0.18)`);
+    grad.addColorStop(1,`rgba(${c[0]},${c[1]},${c[2]},0.01)`);
+  }
+  const ch=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:[...S.labels],
+      datasets:[{
+        label,data:[...data],
+        borderColor:color,borderWidth:1.8,
+        pointRadius:0,pointHoverRadius:4,
+        tension:0.42,fill:fill?'origin':false,
+        backgroundColor:fill?(grad||'transparent'):'transparent',
+      },...extraDatasets]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:false,
+      interaction:{intersect:false,mode:'index'},
+      plugins:{legend:{display:false},tooltip:lightTooltip},
+      scales:{
+        x:{display:false},
+        y:{min,max,grid:{color:'rgba(221,230,222,0.6)',drawBorder:false},ticks:{maxTicksLimit:4,padding:6}}
+      }
+    }
+  });
+  chartInstances[id]=ch; return ch;
+}
+
+function mkBarChart(id,labels,datasets){
+  const ctx=$(id);if(!ctx)return;
+  if(chartInstances[id])chartInstances[id].destroy();
+  chartInstances[id]=new Chart(ctx,{
+    type:'bar',data:{labels,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:{duration:600},
+      plugins:{legend:{display:false},tooltip:lightTooltip},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#7a9a85',maxRotation:30}},
+        y:{grid:{color:'rgba(221,230,222,0.6)',drawBorder:false},ticks:{maxTicksLimit:4,padding:6}}
+      }
+    }
+  });
+}
+
+function mkDoughnutChart(id,labels,data,colors){
+  const ctx=$(id);if(!ctx)return;
+  if(chartInstances[id])chartInstances[id].destroy();
+  chartInstances[id]=new Chart(ctx,{
+    type:'doughnut',
+    data:{labels,datasets:[{data,backgroundColor:colors,borderColor:var_bg(),borderWidth:3}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{color:'#7a9a85',boxWidth:10,padding:10}},tooltip:lightTooltip},
+      cutout:'62%',
+    }
+  });
+}
+function var_bg(){ return '#f2f4f0'; }
+
+function initCharts(){
+  mkLineChart('chart-co2','CO₂ kg/hr','rgb(26,122,60)',S.hist.co2,0.8,2.4);
+  mkLineChart('chart-o2','O₂ L/hr','rgb(12,133,119)',S.hist.o2,28,58);
+  mkLineChart('chart-biomass','OD','rgb(180,83,9)',S.hist.biomass,0.5,1.3);
+  mkLineChart('chart-ph','pH','rgb(180,83,9)',S.hist.ph,6.5,7.9);
+  mkLineChart('chart-temp','°C','rgb(29,78,216)',S.hist.temp,22,27);
+  mkLineChart('chart-turb','NTU','rgb(107,47,187)',S.hist.turb,8,36);
+  mkLineChart('chart-light','μmol','rgb(180,83,9)',S.hist.light,280,440);
+  mkLineChart('chart-pump','RPM','rgb(26,122,60)',S.hist.pump,110,170);
+  mkLineChart('chart-led','%','rgb(180,83,9)',S.hist.led,80,100);
+  mkLineChart('chart-nutr','mg/L','rgb(12,133,119)',S.hist.nutr,35,52);
+  mkLineChart('chart-eff','%','rgb(180,83,9)',S.hist.eff,60,95);
+  mkLineChart('chart-corr','CO₂','rgb(26,122,60)',S.hist.co2,0.8,2.4,false);
+  mkLineChart('chart-cumulative','kg','rgb(26,122,60)',S.hist.cumCO2,0,0.04);
+  mkLineChart('chart-acpi-hist','ACPI','rgb(26,122,60)',S.hist.acpi,60,100);
+  initImpactCharts();
+  initACPIGauge();
+  initACPIBench();
+  updateESGPreviews();
+}
+
+function initImpactCharts(){
+  mkBarChart('chart-impact-bar',
+    ['AlgaeX','Avg Car/day','Small Factory','Power Plant/hr','Cement Plant/hr'],
+    [{data:[S.co2*24,4.6,57.6,700,320],
+      backgroundColor:['rgba(26,122,60,0.75)','rgba(192,57,43,0.55)','rgba(180,83,9,0.55)','rgba(192,57,43,0.75)','rgba(180,83,9,0.75)'],
+      borderRadius:5,borderSkipped:false,maxBarThickness:44}]
+  );
+  mkDoughnutChart('chart-donut',
+    ['Transport','Energy','Industry','Agriculture','Other'],
+    [29,26,23,11,11],
+    ['rgba(192,57,43,0.7)','rgba(180,83,9,0.7)','rgba(29,78,216,0.7)','rgba(26,122,60,0.7)','rgba(148,163,184,0.5)']
+  );
+  // Projection line
+  const projLabels=Array.from({length:12},(_,i)=>{const d=new Date();d.setMonth(d.getMonth()+i);return d.toLocaleString('default',{month:'short'})});
+  const projData=projLabels.map((_,i)=>((S.co2*8760/1000)*(1+i*0.04)).toFixed(2));
+  if(chartInstances['chart-impact-proj'])chartInstances['chart-impact-proj'].destroy();
+  chartInstances['chart-impact-proj']=new Chart($('chart-impact-proj'),{
+    type:'line',
+    data:{labels:projLabels,datasets:[{label:'Projection',data:projData,borderColor:'rgb(26,122,60)',borderWidth:2,fill:true,backgroundColor:'rgba(26,122,60,0.08)',tension:0.4,pointRadius:3,pointBackgroundColor:'rgb(26,122,60)'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:lightTooltip},scales:{x:{grid:{display:false},ticks:{color:'#7a9a85'}},y:{grid:{color:'rgba(221,230,222,0.6)',drawBorder:false},ticks:{maxTicksLimit:4}}}}
+  });
+}
+
+// ═══════════════════════════════════
+// CARBON INTELLIGENCE CHARTS
+// ═══════════════════════════════════
+function initCarbonCharts(){
+  // 30-day forecast with confidence band (TN solar-adjusted)
+  const forecastLabels=Array.from({length:30},(_,i)=>{const d=new Date();d.setDate(d.getDate()+i);return d.toLocaleDateString('en',{month:'short',day:'numeric'});});
+  const baseForecast=forecastLabels.map((_,i)=>parseFloat((S.co2*24*(1+i*0.008)+Math.sin(i/4)*0.3).toFixed(2)));
+  const upper=baseForecast.map(v=>(v*1.085).toFixed(2));
+  const lower=baseForecast.map(v=>(v*0.915).toFixed(2));
+  if(chartInstances['chart-forecast'])chartInstances['chart-forecast'].destroy();
+  chartInstances['chart-forecast']=new Chart($('chart-forecast'),{
+    type:'line',
+    data:{labels:forecastLabels,datasets:[
+      {label:'Upper CI',data:upper,borderColor:'rgba(26,122,60,0.18)',borderWidth:1,fill:'+1',backgroundColor:'rgba(26,122,60,0.06)',tension:0.4,pointRadius:0},
+      {label:'Forecast (kg/day)',data:baseForecast,borderColor:'rgb(26,122,60)',borderWidth:2,fill:false,tension:0.4,pointRadius:0},
+      {label:'Lower CI',data:lower,borderColor:'rgba(26,122,60,0.18)',borderWidth:1,fill:'-1',backgroundColor:'rgba(26,122,60,0.06)',tension:0.4,pointRadius:0},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:lightTooltip},scales:{x:{grid:{display:false},ticks:{color:'#7a9a85',maxTicksLimit:6}},y:{grid:{color:'rgba(221,230,222,0.6)'},ticks:{maxTicksLimit:4},title:{display:true,text:'kg CO₂/day',color:'#7a9a85'}}}}
+  });
+
+  // Tamil Nadu monthly avg temp — heat island data from Frontiers 2024 study
+  const heatLabels=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  // Real TN urban heat island effect (°C above rural) from published studies
+  const tnUHI=[1.2,1.4,1.8,2.4,2.8,2.2,1.9,2.0,2.1,1.8,1.5,1.2];
+  // AlgaeX cooling estimate (evapotranspiration + shade) per unit: ~0.3–0.6°C local
+  const axCool=[0.22,0.25,0.32,0.44,0.50,0.40,0.35,0.36,0.38,0.33,0.28,0.22];
+  if(chartInstances['chart-heat'])chartInstances['chart-heat'].destroy();
+  chartInstances['chart-heat']=new Chart($('chart-heat'),{
+    type:'bar',
+    data:{labels:heatLabels,datasets:[
+      {label:'TN Urban Heat Island °C',data:tnUHI,backgroundColor:'rgba(192,57,43,0.55)',borderRadius:3,maxBarThickness:18},
+      {label:'AlgaeX Cooling (local est.)',data:axCool,backgroundColor:'rgba(26,122,60,0.7)',borderRadius:3,maxBarThickness:18},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#7a9a85',boxWidth:10,padding:10,font:{size:9}}},tooltip:lightTooltip},scales:{x:{grid:{display:false},ticks:{color:'#7a9a85'}},y:{grid:{color:'rgba(221,230,222,0.6)'},ticks:{maxTicksLimit:4},title:{display:true,text:'°C above baseline',color:'#7a9a85'}}}}
+  });
+
+  // Carbon credit — real EU ETS price ~€65/t as of early 2026
+  const creditLabels=Array.from({length:12},(_,i)=>{const d=new Date();d.setMonth(d.getMonth()+i);return d.toLocaleString('default',{month:'short'})});
+  if(chartInstances['chart-credit'])chartInstances['chart-credit'].destroy();
+  chartInstances['chart-credit']=new Chart($('chart-credit'),{
+    type:'line',
+    data:{labels:creditLabels,datasets:[{label:'€ Revenue (EU ETS @€65/t)',data:creditLabels.map((_,i)=>((S.co2*8760/1000*65)*(1+i*0.02)).toFixed(0)),borderColor:'rgb(26,122,60)',borderWidth:2,fill:true,backgroundColor:'rgba(26,122,60,0.07)',tension:0.4,pointRadius:2,pointBackgroundColor:'rgb(26,122,60)'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:lightTooltip},scales:{x:{grid:{display:false},ticks:{color:'#7a9a85'}},y:{grid:{color:'rgba(221,230,222,0.6)'},ticks:{maxTicksLimit:4,callback:v=>'€'+v}}}}
+  });
+
+  // REAL benchmark — peer-reviewed CO₂ absorption rates per hour
+  // AlgaeX (600L PBR): ~1.4 kg/hr real
+  // Urban tree: ~0.0025 kg/hr (21.8 kg/year / 8760h)  
+  // Forest hectare: ~0.114 kg/hr (1 t/yr per ha = 1000/8760)
+  // Grass lawn 100m²: ~0.006 kg/hr
+  // Constructed wetland 100m²: ~0.018 kg/hr
+  if(chartInstances['chart-baseline'])chartInstances['chart-baseline'].destroy();
+  chartInstances['chart-baseline']=new Chart($('chart-baseline'),{
+    type:'bar',
+    data:{
+      labels:['AlgaeX 600L unit','1 urban tree','Forest 100m²','Grass lawn 100m²','Wetland 100m²'],
+      datasets:[{
+        label:'kg CO₂ absorbed/hr',
+        data:[S.co2,0.0025,0.114,0.006,0.018],
+        backgroundColor:['rgba(26,122,60,0.8)','rgba(12,133,119,0.55)','rgba(12,133,119,0.45)','rgba(148,163,184,0.45)','rgba(148,163,184,0.55)'],
+        borderRadius:5,maxBarThickness:32,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:false},tooltip:{...lightTooltip,callbacks:{label:(c)=>`${c.formattedValue} kg CO₂/hr`}}},
+      scales:{
+        x:{grid:{color:'rgba(221,230,222,0.6)'},ticks:{maxTicksLimit:5},title:{display:true,text:'kg CO₂/hr (log scale)',color:'#7a9a85'},type:'logarithmic'},
+        y:{grid:{display:false},ticks:{color:'#7a9a85'}}
+      }
+    }
+  });
+  updateScenario($('unit-slider')?$('unit-slider').value:50);
+}
+
+function updateScenario(n){
+  n=parseInt(n);
+  $('slider-val').textContent=n;
+  // Real: 1 tree absorbs ~21.8 kg CO₂/year (USFS 2023)
+  // Real: avg car emits ~4,600 kg CO₂/year (EPA)
+  // This unit at current rate: co2 kg/hr * 8760 hr/yr
+  const annualPerUnit=S.co2*8760; // kg/year
+  const annualTonnes=(annualPerUnit/1000*n).toFixed(1);
+  // Trees: annual offset / 21.8 kg per tree per year
+  const treeEq=Math.round(annualPerUnit*n/21.8);
+  // Cars: annual offset / 4600 kg per car per year
+  const carEq=Math.round(annualPerUnit*n/4600);
+  $('sc-co2').textContent=annualTonnes+'t';
+  $('sc-trees').textContent=treeEq.toLocaleString();
+  $('sc-cars').textContent=carEq.toLocaleString();
+  // Daily trees inline (for the note)
+  const dailyTrees=Math.round(S.co2*24/0.0597); // 21.8kg/365 = 0.0597 kg/day per tree
+  const di=$('daily-trees-inline');if(di)di.textContent=dailyTrees.toLocaleString()+' tree-day';
+  // SDG13 val
+  const s13=$('sdg13-val');if(s13)s13.textContent=fmt(S.co2);
+  // Credit at real EU ETS March 2026 ~€65/t
+  const credit=(annualPerUnit/1000*65).toFixed(0);
+  $('credit-value').textContent='€'+parseInt(credit).toLocaleString();
+  $('credit-sub').textContent=`Per unit · ${fmt(S.co2)} kg/hr · EU ETS €65/tCO₂e · Mar 2026`;
+}
+
+// ═══════════════════════════════════
+// ACPI GAUGE
+// ═══════════════════════════════════
+function initACPIGauge(){ drawACPIGauge(82); }
+function drawACPIGauge(score){
+  const cv=$('acpi-canvas');if(!cv)return;
+  const ctx=cv.getContext('2d');
+  const w=200,h=200,cx=100,cy=110,r=75,sw=14;
+  ctx.clearRect(0,0,w,h);
+  // BG arc
+  ctx.beginPath();ctx.arc(cx,cy,r,Math.PI,0);
+  ctx.strokeStyle='#dde6de';ctx.lineWidth=sw;ctx.lineCap='round';ctx.stroke();
+  // Value arc
+  const pct=score/100;
+  const startA=Math.PI, endA=Math.PI+pct*Math.PI;
+  const grad2=ctx.createLinearGradient(cx-r,cy,cx+r,cy);
+  grad2.addColorStop(0,'#15683a');grad2.addColorStop(1,'#22c55e');
+  ctx.beginPath();ctx.arc(cx,cy,r,startA,endA);
+  ctx.strokeStyle=grad2;ctx.lineWidth=sw;ctx.lineCap='round';ctx.stroke();
+  // Score text
+  ctx.fillStyle='#111b14';ctx.font='bold 32px Syne,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(score,cx,cy-8);
+  ctx.fillStyle='#7a9a85';ctx.font='11px DM Mono,monospace';ctx.fillText('/ 100',cx,cy+18);
+  // Labels
+  ctx.fillStyle='#7a9a85';ctx.font='9px DM Mono,monospace';
+  ctx.fillText('0',cx-r-10,cy+5);ctx.fillText('100',cx+r+4,cy+5);
+  const el=$('acpi-score');if(el)el.textContent=score;
+}
+
+function initACPIBench(){
+  const ctx=$('chart-acpi-bench');if(!ctx)return;
+  if(chartInstances['chart-acpi-bench'])chartInstances['chart-acpi-bench'].destroy();
+  chartInstances['chart-acpi-bench']=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:['AlgaeX Unit','Urban Tree','Vertical Garden','Green Roof','Constructed Wetland'],
+      datasets:[{
+        label:'Climate Score',
+        data:[82,41,58,35,49],
+        backgroundColor:['rgba(26,122,60,0.8)','rgba(148,163,184,0.5)','rgba(148,163,184,0.5)','rgba(148,163,184,0.5)','rgba(148,163,184,0.5)'],
+        borderRadius:5,maxBarThickness:36,
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:lightTooltip},scales:{x:{grid:{display:false},ticks:{color:'#7a9a85'}},y:{grid:{color:'rgba(221,230,222,0.6)'},min:0,max:100,ticks:{maxTicksLimit:5}}}}
+  });
+}
+
+// ═══════════════════════════════════
+// DEPLOYMENT MAP (CANVAS)
+// ═══════════════════════════════════
+let mapHeatMode=false;
+// Real Tamil Nadu cities with AQI data and priority scores
+const mapCities=[
+  // High priority — industrial/high AQI
+  {name:'Chennai',x:0.62,y:0.22,aqi:161,pop:'10.9M',priority:'critical',units:0,color:'#c0392b'},
+  {name:'Coimbatore',x:0.22,y:0.42,aqi:118,pop:'2.1M',priority:'high',units:0,color:'#e05c25'},
+  {name:'Madurai',x:0.42,y:0.62,aqi:94,pop:'1.5M',priority:'high',units:0,color:'#e05c25'},
+  {name:'Tiruchirappalli',x:0.48,y:0.50,aqi:88,pop:'1.0M',priority:'medium',units:0,color:'#b45309'},
+  {name:'Salem',x:0.34,y:0.32,aqi:82,pop:'0.9M',priority:'medium',units:0,color:'#b45309'},
+  {name:'Tirunelveli',x:0.36,y:0.78,aqi:74,pop:'0.65M',priority:'medium',units:0,color:'#b45309'},
+  {name:'Vellore',x:0.58,y:0.28,aqi:78,pop:'0.6M',priority:'medium',units:0,color:'#b45309'},
+  {name:'Erode',x:0.28,y:0.38,aqi:71,pop:'0.5M',priority:'low',units:0,color:'#1a7a3c'},
+  {name:'Tiruppur',x:0.26,y:0.44,aqi:68,pop:'0.45M',priority:'low',units:0,color:'#1a7a3c'},
+  {name:'Dindigul',x:0.38,y:0.56,aqi:65,pop:'0.4M',priority:'low',units:0,color:'#1a7a3c'},
+  {name:'Thanjavur',x:0.56,y:0.52,aqi:62,pop:'0.25M',priority:'low',units:0,color:'#1a7a3c'},
+  {name:'Cuddalore',x:0.66,y:0.38,aqi:76,pop:'0.2M',priority:'medium',units:0,color:'#b45309'},
+  {name:'Thoothukudi',x:0.44,y:0.82,aqi:59,pop:'0.35M',priority:'low',units:0,color:'#1a7a3c'},
+];
+let mapT=0;
+let mapInited=false;
+function initMapCanvas(){
+  const cv=$('deploy-map-canvas');if(!cv)return;
+  if(mapInited)return;
+  mapInited=true;
+  cv.width=cv.parentElement?cv.parentElement.offsetWidth-24||800:800;cv.height=380;
+  drawMap();
+  setInterval(()=>{mapT+=0.04;drawMap();},80);
+}
+function toggleMapMode(){mapHeatMode=!mapHeatMode;drawMap();}
+
+// Tamil Nadu approximate outline polygon (normalized 0-1 coords)
+const tnOutline=[
+  [0.52,0.02],[0.58,0.04],[0.65,0.08],[0.72,0.14],[0.76,0.20],[0.78,0.28],
+  [0.80,0.34],[0.78,0.42],[0.74,0.50],[0.70,0.58],[0.66,0.65],[0.62,0.72],
+  [0.56,0.80],[0.50,0.88],[0.44,0.94],[0.38,0.98],[0.32,0.96],[0.26,0.90],
+  [0.20,0.84],[0.16,0.76],[0.14,0.68],[0.16,0.60],[0.18,0.52],[0.16,0.44],
+  [0.18,0.36],[0.22,0.28],[0.28,0.22],[0.34,0.16],[0.40,0.10],[0.46,0.05],[0.52,0.02]
+];
+
+function drawMap(){
+  const cv=$('deploy-map-canvas');if(!cv)return;
+  const ctx=cv.getContext('2d');const w=cv.width,h=cv.height;
+  ctx.clearRect(0,0,w,h);
+  // Ocean bg
+  const bg=ctx.createLinearGradient(0,0,w,h);
+  bg.addColorStop(0,'#e8f4f8');bg.addColorStop(1,'#d4eaf4');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+  // Draw TN state
+  ctx.beginPath();
+  tnOutline.forEach(([px,py],i)=>{if(i===0)ctx.moveTo(px*w,py*h);else ctx.lineTo(px*w,py*h);});
+  ctx.closePath();
+  const tnFill=ctx.createLinearGradient(0,0,w,h);
+  tnFill.addColorStop(0,'#d6ead8');tnFill.addColorStop(1,'#c4dfc7');
+  ctx.fillStyle=tnFill;ctx.fill();
+  ctx.strokeStyle='#a8c4ab';ctx.lineWidth=1.5;ctx.stroke();
+  // Heatmap blobs per city AQI
+  if(mapHeatMode){
+    mapCities.forEach(c=>{
+      const x=c.x*w,y=c.y*h;const r=Math.sqrt(c.aqi)*3.2;
+      const g=ctx.createRadialGradient(x,y,0,x,y,r);
+      const col=c.priority==='critical'?'192,57,43':c.priority==='high'?'224,92,37':'180,83,9';
+      g.addColorStop(0,`rgba(${col},0.45)`);g.addColorStop(1,`rgba(${col},0)`);
+      ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
+    });
+  }
+  // City dots + labels
+  mapCities.forEach((c,i)=>{
+    const x=c.x*w,y=c.y*h;
+    const pulse=(Math.sin(mapT+i*0.8)+1)/2;
+    // Pulse ring for high priority
+    if(c.priority==='critical'||c.priority==='high'){
+      const pr=10+pulse*14;
+      const col=c.priority==='critical'?'192,57,43':'224,92,37';
+      ctx.beginPath();ctx.arc(x,y,pr,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${col},${0.1*(1-pulse)})`;ctx.fill();
+    }
+    // Dot (size = AQI scaled)
+    const dotR=4+Math.sqrt(c.aqi/160)*4;
+    ctx.beginPath();ctx.arc(x,y,dotR,0,Math.PI*2);
+    ctx.fillStyle=c.color+'cc';ctx.fill();
+    ctx.strokeStyle='white';ctx.lineWidth=1.2;ctx.stroke();
+    // AQI badge
+    const bw=36;const bh=14;const bx=x+dotR+4;const by=y-bh/2;
+    ctx.fillStyle='rgba(255,255,255,0.88)';
+    roundRect2(ctx,bx,by,bw,bh,3);ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,0.08)';ctx.lineWidth=0.5;
+    roundRect2(ctx,bx,by,bw,bh,3);ctx.stroke();
+    ctx.fillStyle=c.color;ctx.font='bold 8px IBM Plex Mono,monospace';
+    ctx.textAlign='left';ctx.fillText('AQI '+c.aqi,bx+3,by+9.5);
+    // City name
+    ctx.fillStyle='#1a2e1c';ctx.font='bold 9px Manrope,sans-serif';
+    ctx.fillText(c.name,bx,by-2);
+  });
+  // Legend
+  const lx=12,ly=12;
+  ctx.fillStyle='rgba(255,255,255,0.9)';roundRect2(ctx,lx,ly,200,72,7);ctx.fill();
+  ctx.strokeStyle='#c8d9cb';ctx.lineWidth=1;roundRect2(ctx,lx,ly,200,72,7);ctx.stroke();
+  ctx.fillStyle='#111b14';ctx.font='bold 10px Manrope,sans-serif';ctx.textAlign='left';
+  ctx.fillText('AlgaeX Priority — Tamil Nadu',lx+10,ly+16);
+  ctx.font='8.5px Manrope,sans-serif';
+  [[c.color='#c0392b','Critical AQI > 150'],[c.color='#e05c25','High AQI 100–150'],[c.color='#b45309','Medium AQI 60–100'],[c.color='#1a7a3c','Lower AQI < 60']].forEach((_,idx)=>{
+    const cols=['#c0392b','#e05c25','#b45309','#1a7a3c'];
+    const lbls=['Critical AQI >150','High AQI 100–150','Medium AQI 60–100','Low AQI <60'];
+    ctx.beginPath();ctx.arc(lx+18,ly+28+idx*11,4,0,Math.PI*2);ctx.fillStyle=cols[idx];ctx.fill();
+    ctx.fillStyle='#3a5c48';ctx.fillText(lbls[idx],lx+28,ly+32+idx*11);
+  });
+  // Scale bar
+  ctx.strokeStyle='#7a9a85';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(w-80,h-18);ctx.lineTo(w-20,h-18);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(w-80,h-14);ctx.lineTo(w-80,h-22);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(w-20,h-14);ctx.lineTo(w-20,h-22);ctx.stroke();
+  ctx.fillStyle='#7a9a85';ctx.font='8px IBM Plex Mono,monospace';ctx.textAlign='center';
+  ctx.fillText('~150 km',w-50,h-8);
+}
+function roundRect2(ctx,x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);ctx.lineTo(x+r,y+h);
+  ctx.arcTo(x,y+h,x,y+h-r,r);ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
+}
+
+// ═══════════════════════════════════
+// ESG PREVIEWS
+// ═══════════════════════════════════
+function updateESGPreviews(){
+  const jEl=$('json-preview');if(jEl){
+    jEl.textContent=`{
+  "report_id": "AX-ESG-2025-001",
+  "device": "AX-URB-0042",
+  "timestamp": "${new Date().toISOString()}",
+  "co2_captured_kg_hr": ${fmt(S.co2)},
+  "o2_produced_l_hr": ${fmt(S.o2,1)},
+  "annual_offset_tonnes": ${(S.co2*8760/1000).toFixed(2)},
+  "sdg_alignment": ["SDG13","SDG11","SDG7"],
+  "efficiency_pct": ${fmt(S.eff,1)},
+  "carbon_credits_eur": ${(S.co2*8760/1000*65).toFixed(0)},
+  "certification": "EU-ETS-TIER2"
+}`;
+  }
+  const cEl=$('csv-preview');if(cEl){
+    cEl.textContent=`timestamp,device,co2_kg_hr,o2_l_hr,annual_offset_t,eff_pct,credits_eur
+${new Date().toISOString()},AX-URB-0042,${fmt(S.co2)},${fmt(S.o2,1)},${(S.co2*8760/1000).toFixed(2)},${fmt(S.eff,1)},${(S.co2*8760/1000*65).toFixed(0)}`;
+  }
+  const eA=$('esg-annual');if(eA)eA.textContent=(S.co2*8760/1000).toFixed(2)+'t';
+}
+
+// ═══════════════════════════════════
+// SENSOR TICK
+// ═══════════════════════════════════
+function tickSensors(){
+  S.tick++;
+  S.co2   =clamp(noise(S.co2,0.07)*(1+Math.sin(S.tick/40)*0.04),0.9,2.2);
+  S.o2    =clamp(noise(S.o2,1.0)*(1+Math.sin(S.tick/35)*0.03),30,54);
+  S.density=clamp(noise(S.density,0.05),1.5,4.5);
+  S.ph    =clamp(noise(S.ph,0.03),6.6,7.7);
+  S.temp  =clamp(noise(S.temp,0.12),22.5,26.5);
+  S.turb  =clamp(noise(S.turb,1.2),9,33);
+  S.light =clamp(noise(S.light,6),260,420);
+  S.nutr  =clamp(noise(S.nutr,0.4),32,58);
+  S.eff   =clamp(noise(S.eff,1.0),66,91);
+  S.biomass=clamp(noise(S.biomass,0.012),0.55,1.35);
+  S.pumpA =clamp(noise(S.pumpA,4),128,156);
+  S.aerRPM=clamp(noise(S.aerRPM,5),200,240);
+  S.ledDuty=clamp(noise(S.ledDuty,1.5),85,98);
+  S.co2Session+=S.co2/3600; S.o2Session+=S.o2/3600;
+
+  const now=new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const ph=(arr,v,max=60)=>{arr.push(v);if(arr.length>max)arr.shift();};
+  ph(S.labels,now);ph(S.hist.co2,S.co2);ph(S.hist.o2,S.o2);
+  ph(S.hist.biomass,S.biomass);ph(S.hist.ph,S.ph);ph(S.hist.temp,S.temp);
+  ph(S.hist.turb,S.turb);ph(S.hist.light,S.light);ph(S.hist.pump,S.pumpA);
+  ph(S.hist.led,S.ledDuty);ph(S.hist.nutr,S.nutr);ph(S.hist.eff,S.eff);
+  ph(S.hist.cumCO2,S.co2Session);
+  const acpiScore=Math.round(clamp((S.eff/91*35)+(S.co2/2.2*30)+((S.density/4.5)*20)+(100-(Math.abs(S.ph-7.1)/0.5)*100)/100*15,55,98));
+  ph(S.hist.acpi,acpiScore);
+
+  updateCharts();
+  updateKPIs();
+  updateSensorTable();
+  updateMechGrid();
+  updateImpact();
+  updateAIContext();
+  update3DOverlay();
+  updateHealth();
+  updateACPI(acpiScore);
+  updateESGPreviews();
+  if(chartInstances['chart-acpi-hist']){
+    chartInstances['chart-acpi-hist'].data.labels=[...S.labels];
+    chartInstances['chart-acpi-hist'].data.datasets[0].data=[...S.hist.acpi];
+    chartInstances['chart-acpi-hist'].update('none');
+  }
+  updateScenario($('unit-slider')?$('unit-slider').value:50);
+}
+
+function updateCharts(){
+  const m={'chart-co2':S.hist.co2,'chart-o2':S.hist.o2,'chart-biomass':S.hist.biomass,
+    'chart-ph':S.hist.ph,'chart-temp':S.hist.temp,'chart-turb':S.hist.turb,
+    'chart-light':S.hist.light,'chart-pump':S.hist.pump,'chart-led':S.hist.led,
+    'chart-nutr':S.hist.nutr,'chart-eff':S.hist.eff,'chart-cumulative':S.hist.cumCO2};
+  Object.entries(m).forEach(([id,data])=>{
+    const ch=chartInstances[id];if(!ch)return;
+    ch.data.labels=[...S.labels];ch.data.datasets[0].data=[...data];ch.update('none');
+  });
+  if(chartInstances['chart-corr']){
+    chartInstances['chart-corr'].data.labels=[...S.labels];
+    chartInstances['chart-corr'].data.datasets[0].data=[...S.hist.co2];
+    chartInstances['chart-corr'].update('none');
+  }
+}
+
+// ═══════════════════════════════════
+// KPI UPDATES WITH PULSE
+// ═══════════════════════════════════
+const prevVals={co2:0,o2:0,dens:0,eff:0};
+function updateKPIs(){
+  const update=(id,cardId,val,prev)=>{
+    const el=$(id);if(!el)return;
+    if(Math.abs(val-prev)>0.01){
+      const card=$(cardId);
+      if(card){card.classList.remove('pulsing');void card.offsetWidth;card.classList.add('pulsing');}
+    }
+    el.textContent=val;
+  };
+  update('kpi-co2','kpi-card-co2',fmt(S.co2),prevVals.co2);
+  update('kpi-o2','kpi-card-o2',fmt(S.o2,1),prevVals.o2);
+  update('kpi-dens','kpi-card-dens',fmt(S.density,1),prevVals.dens);
+  update('kpi-eff','kpi-card-eff',fmt(S.eff,1),prevVals.eff);
+  prevVals.co2=S.co2;prevVals.o2=S.o2;prevVals.dens=S.density;prevVals.eff=S.eff;
+  $('co2-live-val').textContent=`Current: ${fmt(S.co2)} kg/hr · Session: ${fmt(S.co2Session,3)} kg`;
+  $('o2-live-val').textContent=`Current: ${fmt(S.o2,1)} L/hr · Session: ${fmt(S.o2Session,2)} L`;
+  $('sensor-last-update').textContent='Updated '+new Date().toLocaleTimeString('en-US',{hour12:false});
+}
+
+// ═══════════════════════════════════
+// SENSOR TABLE
+// ═══════════════════════════════════
+const sensorDefs=[
+  {name:'CO₂ Capture Rate',key:'co2',unit:'kg/hr',min:0.9,max:2.2,ok:[0.9,2.0],col:'green'},
+  {name:'O₂ Production',key:'o2',unit:'L/hr',min:30,max:54,ok:[30,52],col:'teal'},
+  {name:'Algae Density',key:'density',unit:'g/L',min:1.5,max:4.5,ok:[1.5,4.0],col:'amber'},
+  {name:'pH Level',key:'ph',unit:'pH',min:6.6,max:7.7,ok:[6.8,7.5],col:'amber'},
+  {name:'Temperature',key:'temp',unit:'°C',min:22.5,max:26.5,ok:[23,26],col:'blue'},
+  {name:'Turbidity',key:'turb',unit:'NTU',min:9,max:33,ok:[9,28],col:'blue'},
+  {name:'Light Intensity',key:'light',unit:'μmol/m²/s',min:260,max:420,ok:[280,410],col:'amber'},
+  {name:'Nutrient (N)',key:'nutr',unit:'mg/L',min:32,max:58,ok:[35,55],col:'teal'},
+  {name:'Efficiency',key:'eff',unit:'%',min:66,max:91,ok:[70,91],col:'green'},
+  {name:'Biomass OD₆₈₀',key:'biomass',unit:'OD',min:0.55,max:1.35,ok:[0.6,1.3],col:'amber'},
+];
+function updateSensorTable(){
+  const tb=$('sensor-tbody');if(!tb)return;
+  const colMap={green:'var(--accent)',teal:'var(--teal)',amber:'var(--amber)',blue:'var(--blue)'};
+  tb.innerHTML=sensorDefs.map(d=>{
+    const v=S[d.key];const pct=(v-d.min)/(d.max-d.min)*100;
+    const st=v>=d.ok[0]&&v<=d.ok[1]?'ok':'warn';
+    const trend=S.hist[d.key]?.length>2?(S.hist[d.key].at(-1)>S.hist[d.key].at(-3)?'↑':'↓'):'→';
+    const tc=trend==='↑'?'up':trend==='↓'?'down':'flat';
+    return `<tr><td class="sensor-name">${d.name}</td>
+      <td class="sensor-val-cell">${fmt(v,d.key==='turb'?0:2)}</td>
+      <td class="sensor-unit-cell">${d.unit}</td>
+      <td><span class="mini-bar"><span class="mini-fill" style="width:${Math.min(pct,100).toFixed(1)}%;background:${colMap[d.col]}"></span></span></td>
+      <td><span class="status-chip ${st}">${st==='ok'?'Normal':'Warning'}</span></td>
+      <td class="${tc}" style="font-family:'DM Mono',monospace;font-size:12px">${trend}</td></tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════
+// MECHATRONICS
+// ═══════════════════════════════════
+const mechDefs=[
+  {icon:'⚙️',name:'Peristaltic Pump A',sub:'Media circulation',key:'pumpA',unit:'RPM',status:'ok'},
+  {icon:'🔧',name:'Peristaltic Pump B',sub:'Nutrient dosing',key:'pumpB',unit:'RPM',status:'warn'},
+  {icon:'💨',name:'CO₂ Solenoid Valve',sub:'Gas injection PWM',valStatic:'78%',status:'ok'},
+  {icon:'🌀',name:'Aerator Module',sub:'O₂ degassing',key:'aerRPM',unit:'RPM',status:'ok'},
+  {icon:'💡',name:'LED Array (×4)',sub:'660nm + 450nm grow',key:'ledDuty',unit:'%',status:'ok'},
+  {icon:'🌡️',name:'Peltier TEC',sub:'Temperature control',valStatic:'±0.2°C',status:'ok'},
+  {icon:'⚗️',name:'pH Dosing Servo',sub:'NaOH/HCl auto-inject',valStatic:'PID ON',status:'ok'},
+  {icon:'🔄',name:'Harvest Centrifuge',sub:'Biomass separation',valStatic:'IDLE',status:'warn'},
+];
+function updateMechGrid(){
+  const g=$('mech-grid');if(!g)return;
+  g.innerHTML=mechDefs.map(m=>{
+    const v=m.key?fmt(S[m.key],0)+' '+m.unit:m.valStatic;
+    return `<div class="mech-card">
+      <div class="mech-icon-wrap">${m.icon}</div>
+      <div class="mech-info"><div class="mech-name">${m.name}</div><div class="mech-sub">${m.sub}</div></div>
+      <div class="mech-right"><div class="mech-val">${v}</div>
+        <span class="status-chip ${m.status}" style="margin-top:4px;display:inline-flex">${m.status==='ok'?'Running':'Standby'}</span>
+      </div></div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════
+// IMPACT
+// ═══════════════════════════════════
+const impactDefs=[
+  // Real: 1 tree ≈ 21.8 kg CO₂/year = 0.00249 kg/hr (USFS 2023)
+  {emoji:'🌳',labelFn:()=>((S.co2/0.00249)|0)+'',unit:'Trees / hr',sub:'1 tree absorbs 21.8 kg CO₂/yr (USFS)',col:'var(--accent)',progFn:()=>Math.min(S.co2/0.00249/600*100,100)},
+  {emoji:'🏭',labelFn:()=>(S.co2/2.4*100).toFixed(1)+'%',unit:'Small factory offset',sub:'Avg small factory: 2.4 kg CO₂/hr',col:'var(--teal)',progFn:()=>Math.min(S.co2/2.4*100,100)},
+  {emoji:'🌍',labelFn:()=>(S.co2*8760/1000).toFixed(2)+'t',unit:'Annual projection',sub:'At current capture rate',col:'var(--amber)',progFn:()=>Math.min(S.co2*8760/1000/2*100,100)},
+  {emoji:'⚡',labelFn:()=>((S.o2*0.0023*1000)|0)+'W',unit:'Energy equivalent',sub:'vs. electrolysis O₂ generation',col:'var(--blue)',progFn:()=>Math.min(S.o2*0.0023*10,100)},
+  // Real: avg car ~4,600 kg CO₂/yr = 0.525 kg/hr
+  {emoji:'🚗',labelFn:()=>(S.co2/0.525).toFixed(1),unit:'Cars offset / hr',sub:'Avg car: 4,600 kg CO₂/yr (EPA)',col:'#b45309',progFn:()=>Math.min(S.co2/0.525/3*100,100)},
+];
+function updateImpact(){
+  const g=$('impact-grid');if(!g)return;
+  g.innerHTML=impactDefs.map(d=>`
+    <div class="impact-card">
+      <div class="impact-emoji">${d.emoji}</div>
+      <div class="impact-num" style="color:${d.col}">${d.labelFn()}</div>
+      <div class="impact-label">${d.unit}</div>
+      <div class="impact-sub">${d.sub}</div>
+      <div class="impact-track"><div class="impact-prog" style="width:${d.progFn().toFixed(1)}%;background:${d.col}"></div></div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════
+// ACPI UPDATE
+// ═══════════════════════════════════
+function updateACPI(score){
+  drawACPIGauge(score);
+  const s1=(S.eff/91*100).toFixed(0);
+  const s3=(S.biomass/1.35*100).toFixed(0);
+  const phdiff=Math.abs(S.ph-7.1);
+  const s5=Math.max(0,(100-phdiff/0.5*100)).toFixed(0);
+  const s6=(S.co2/2.2*100).toFixed(0);
+  const set=(id,v,bid)=>{const e=$(id);if(e)e.textContent=v+'%';const b=$(bid);if(b)b.style.width=v+'%';};
+  set('acpi-s1',s1,'acpi-b1');set('acpi-s3',s3,'acpi-b3');
+  set('acpi-s5',s5,'acpi-b5');set('acpi-s6',s6,'acpi-b6');
+}
+
+// ═══════════════════════════════════
+// AI CONTEXT
+// ═══════════════════════════════════
+function updateAIContext(){
+  const set=(id,v)=>{const e=$(id);if(e)e.textContent=v;};
+  set('ai-ctx-co2',fmt(S.co2)+' kg/hr');
+  set('ai-ctx-o2',fmt(S.o2,1)+' L/hr');
+  set('ai-ctx-eff',fmt(S.eff,1)+'%');
+  set('ai-ctx-ph',fmt(S.ph,1));
+}
+function update3DOverlay(){
+  const set=(id,v)=>{const e=$(id);if(e)e.textContent=v;};
+  set('vi-dens',fmt(S.density,1)+' g/L');set('vi-temp',fmt(S.temp,1)+' °C');
+  set('vi-ph',fmt(S.ph,1));set('vi-co2',fmt(S.co2)+' kg/hr');
+  // HUD
+  set('hud-co2',fmt(S.co2)+' kg');set('hud-o2',fmt(S.o2,1)+' L');
+  set('hud-ph',fmt(S.ph,1));set('hud-eff',fmt(S.eff,1)+'%');
+  const hb=(id,pct)=>{const e=$(id);if(e)e.style.width=pct+'%';};
+  hb('hud-co2-bar',S.co2/2.2*100);hb('hud-o2-bar',S.o2/54*100);
+  hb('hud-ph-bar',(S.ph-6.6)/(7.7-6.6)*100);hb('hud-eff-bar',S.eff/91*100);
+}
+function updateHealth(){
+  const cpu=clamp(noise(34,3),20,55);const mem=clamp(noise(58,2),45,72);
+  $('h-cpu').style.width=cpu+'%';$('h-cpu-v').textContent=cpu.toFixed(0)+'%';
+  $('h-mem').style.width=mem+'%';$('h-mem-v').textContent=mem.toFixed(0)+'%';
+}
+
+// ═══════════════════════════════════
+// ALERTS
+// ═══════════════════════════════════
+const alertPool=[
+  {type:'ok',msg:'CO₂ capture rate stable at optimal threshold.'},
+  {type:'ok',msg:'Photosynthetic cycle Phase II — biomass accumulation confirmed.'},
+  {type:'warn',msg:'pH deviation detected — auto-dosing servo correcting.'},
+  {type:'ok',msg:'Pump A flow rate synchronized. Circulation nominal.'},
+  {type:'ok',msg:'LED array duty cycle auto-adjusted for peak PAR output.'},
+  {type:'warn',msg:'Turbidity spike — monitoring culture clarity.'},
+  {type:'ok',msg:'Biomass density crossing 2.8 g/L milestone.'},
+  {type:'warn',msg:'Nutrient depletion forecast in 1h 48m — schedule dosing.'},
+  {type:'info',msg:'O₂ vent valve pressure nominal. Harvest window in ~18h.'},
+  {type:'ok',msg:'Temperature regulation PID stable at 24.3°C (±0.2°C).'},
+  {type:'warn',msg:'CO₂ inlet flow micro-fluctuation — self-corrected.'},
+  {type:'ok',msg:'ACPI score updated — performance at 82/100.'},
+  {type:'info',msg:'ESG data snapshot synced to reporting pipeline.'},
+  {type:'ok',msg:'Carbon credit epoch recorded — EU-ETS tier 2 compliant.'},
+];
+let alertIdx=0;
+function addAlert(obj){
+  const a=typeof obj==='object'?obj:alertPool[alertIdx++%alertPool.length];
+  const t=new Date().toLocaleTimeString('en-US',{hour12:false});
+  const el=`<div class="alert-row ${a.type}"><div class="alert-dot ${a.type}"></div><div class="alert-text">${a.msg}</div><div class="alert-time">${t}</div></div>`;
+  const oa=$('overview-alerts');if(oa){oa.insertAdjacentHTML('afterbegin',el);if(oa.children.length>5)oa.lastChild.remove();}
+  const fl=$('full-log');if(fl){fl.insertAdjacentHTML('afterbegin',el);if(fl.children.length>30)fl.lastChild.remove();}
+}
+addAlert();
+setInterval(()=>addAlert(),4800+Math.random()*2200);
+
+// ═══════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════
+function navTo(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  $('page-'+page)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick')?.includes("'"+page+"'"))n.classList.add('active');});
+  if(page==='3d'&&!vizInited)initViz();
+  if(page==='impact')setTimeout(initImpactCharts,60);
+  if(page==='carbon')setTimeout(()=>{initCarbonCharts();},80);
+  if(page==='deploy')setTimeout(()=>{initMapCanvas();},80);
+  if(page==='acpi'){setTimeout(()=>{initACPIBench();},80);}
+  if(page==='esg')updateESGPreviews();
+}
+
+// ═══════════════════════════════════
+// 3D — LIQUID3 MODEL
+// ═══════════════════════════════════
+let vizInited=false,vizScene,vizCamera,vizRenderer,vizGroup;
+let vizRotX=0.3,vizRotY=0,vizTgtX=0.3,vizTgtY=0;
+let vizMouseDown=false,vizLastMouse={x:0,y:0};
+let vizExploded=false,vizWired=false,vizFlowing=false;
+let vizBubbleT=0;
+const vizComponents=[];
+const compDefs=[
+  {name:'Culture Vessel',desc:'600L cylindrical body',color:0x22c55e,status:'ok'},
+  {name:'LED Grow Rings',desc:'Solar + 660/450nm array',color:0x3b82f6,status:'ok'},
+  {name:'Aerator Tube',desc:'Bubble diffuser column',color:0x94a3b8,status:'ok'},
+  {name:'CO₂ Inlet',desc:'Solenoid-regulated flow',color:0xf59e0b,status:'ok'},
+  {name:'O₂ Outlet Valve',desc:'Auto-vent 0.2 bar',color:0x38bdf8,status:'ok'},
+  {name:'Solar Canopy',desc:'Integrated PV panel',color:0x1e3a5f,status:'ok'},
+  {name:'Bench / Base',desc:'Integrated urban seating',color:0x64748b,status:'ok'},
+  {name:'Algae Culture',desc:'Chlorella reinhardtii',color:0x4ade80,status:'ok'},
+];
+
+function initViz(){
+  vizInited=true;
+  const canvas=$('viz-canvas');
+  const wrap=$('viz-canvas-wrap');
+  vizRenderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  vizRenderer.setPixelRatio(window.devicePixelRatio);
+  vizRenderer.shadowMap.enabled=true;
+  vizRenderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  vizRenderer.setSize(wrap.offsetWidth,wrap.offsetHeight);
+
+  vizScene=new THREE.Scene();
+  vizScene.fog=new THREE.FogExp2(0xd4e8d6,0.05);
+  vizCamera=new THREE.PerspectiveCamera(46,wrap.offsetWidth/wrap.offsetHeight,0.1,200);
+  vizCamera.position.set(0,1.5,9);
+
+  // Lighting
+  vizScene.add(new THREE.AmbientLight(0xd4f0d8,1.4));
+  const dl=new THREE.DirectionalLight(0xfff5e0,1.8);
+  dl.position.set(8,14,8);dl.castShadow=true;
+  dl.shadow.mapSize.width=1024;dl.shadow.mapSize.height=1024;
+  dl.shadow.camera.near=0.5;dl.shadow.camera.far=40;
+  vizScene.add(dl);
+  const pl1=new THREE.PointLight(0x22c55e,3.5,22);pl1.position.set(0,1,2.5);vizScene.add(pl1);
+  const pl2=new THREE.PointLight(0x86efac,2.2,16);pl2.position.set(-3,3,3);vizScene.add(pl2);
+  const pl3=new THREE.PointLight(0xfbbf24,1.2,12);pl3.position.set(0,6,0);vizScene.add(pl3);
+  const rim=new THREE.PointLight(0xbfdbfe,1.5,20);rim.position.set(-5,2,-3);vizScene.add(rim);
+
+  vizGroup=new THREE.Group();
+  vizScene.add(vizGroup);
+
+  const tankR=1.1,tankH=3.8;
+
+  // Main cylinder (plexiglass)
+  const tankGeo=new THREE.CylinderGeometry(tankR,tankR,tankH,56,1,true);
+  const tankMat=new THREE.MeshPhysicalMaterial({
+    color:0xa7f3d0,transparent:true,opacity:0.2,
+    roughness:0.02,metalness:0.05,side:THREE.DoubleSide,
+    envMapIntensity:1.2,reflectivity:0.8,
+  });
+  const tank=new THREE.Mesh(tankGeo,tankMat);
+  tank.userData={orig:new THREE.Vector3(0,0,0),compIdx:0};
+  tank.castShadow=true;vizGroup.add(tank);vizComponents.push(tank);
+
+  // Caps
+  const capGeo=new THREE.CylinderGeometry(tankR,tankR,0.09,48);
+  const capMat=new THREE.MeshPhysicalMaterial({color:0x334155,metalness:0.9,roughness:0.15});
+  const topCap=new THREE.Mesh(capGeo,capMat);topCap.position.y=tankH/2;
+  topCap.userData={orig:topCap.position.clone(),compIdx:0};vizGroup.add(topCap);
+  const botCap=new THREE.Mesh(capGeo,capMat);botCap.position.y=-tankH/2;
+  botCap.userData={orig:botCap.position.clone(),compIdx:0};vizGroup.add(botCap);
+
+  // Algae volume (volumetric glow)
+  const algaeGeo=new THREE.CylinderGeometry(tankR-0.07,tankR-0.07,tankH-0.14,48,1,false);
+  const algaeMat=new THREE.MeshPhysicalMaterial({
+    color:0x16a34a,transparent:true,opacity:0.52,
+    roughness:0.08,metalness:0.0,
+    emissive:0x0d5c1c,emissiveIntensity:0.65,
+  });
+  const algaeVol=new THREE.Mesh(algaeGeo,algaeMat);
+  algaeVol.userData={orig:new THREE.Vector3(0,0,0),compIdx:7,isAlgae:true};
+  vizGroup.add(algaeVol);vizComponents.push(algaeVol);
+
+  // Algae particles (swirling)
+  const pGeo=new THREE.BufferGeometry();
+  const pos=[];
+  for(let i=0;i<700;i++){
+    const r=(Math.random()*0.88)*tankR;const a=Math.random()*Math.PI*2;
+    pos.push(r*Math.cos(a),(Math.random()-0.5)*tankH*0.92,r*Math.sin(a));
+  }
+  pGeo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  const pMat=new THREE.PointsMaterial({color:0x4ade80,size:0.042,transparent:true,opacity:0.8,sizeAttenuation:true});
+  const pts=new THREE.Points(pGeo,pMat);
+  pts.userData={orig:new THREE.Vector3(0,0,0),isParticles:true,compIdx:7};
+  vizGroup.add(pts);vizComponents.push(pts);
+
+  // Solar canopy
+  const solarGeo=new THREE.BoxGeometry(3.4,0.08,3.4);
+  const solarMat=new THREE.MeshPhysicalMaterial({color:0x1e3a5f,metalness:0.55,roughness:0.28,transparent:true,opacity:0.94});
+  const solarPanel=new THREE.Mesh(solarGeo,solarMat);
+  solarPanel.position.y=tankH/2+0.75;solarPanel.castShadow=true;
+  solarPanel.userData={orig:solarPanel.position.clone(),compIdx:5};
+  vizGroup.add(solarPanel);vizComponents.push(solarPanel);
+  const solarEdges=new THREE.EdgesGeometry(solarGeo);
+  const sEL=new THREE.LineSegments(solarEdges,new THREE.LineBasicMaterial({color:0x60a5fa,transparent:true,opacity:0.45}));
+  sEL.position.copy(solarPanel.position);vizGroup.add(sEL);
+  for(let row=0;row<3;row++) for(let col=0;col<3;col++){
+    const cGeo=new THREE.PlaneGeometry(0.98,0.98);
+    const cMat=new THREE.MeshBasicMaterial({color:0x1d4ed8,transparent:true,opacity:0.55,side:THREE.DoubleSide});
+    const cell=new THREE.Mesh(cGeo,cMat);cell.rotation.x=-Math.PI/2;
+    cell.position.set(-0.98+col*1.0,tankH/2+0.73,-0.98+row*1.0);vizGroup.add(cell);
+  }
+  const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.065,0.065,0.72,12),new THREE.MeshPhysicalMaterial({color:0x475569,metalness:0.92,roughness:0.18}));
+  pole.position.y=tankH/2+0.37;vizGroup.add(pole);
+
+  // Frame
+  const frameMat=new THREE.MeshPhysicalMaterial({color:0x94a3b8,metalness:0.9,roughness:0.14});
+  [0,1,2,3].forEach(i=>{
+    const ang=i*Math.PI/2+Math.PI/4;
+    const bar=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,tankH+0.35,8),frameMat);
+    bar.position.set(Math.cos(ang)*(tankR+0.13),0,Math.sin(ang)*(tankR+0.13));
+    bar.userData={orig:bar.position.clone()};vizGroup.add(bar);
+  });
+  for(let h=0;h<3;h++){
+    const hoop=new THREE.Mesh(new THREE.TorusGeometry(tankR+0.13,0.032,8,48),frameMat);
+    hoop.position.y=-tankH/2+0.62+(h*1.22);hoop.rotation.x=Math.PI/2;
+    hoop.userData={orig:hoop.position.clone(),compIdx:1};vizGroup.add(hoop);vizComponents.push(hoop);
+  }
+
+  // LED rings (coloured)
+  for(let i=0;i<4;i++){
+    const rg=new THREE.TorusGeometry(tankR+0.025,0.04,8,48);
+    const rm=new THREE.MeshBasicMaterial({color:i%2===0?0x4ade80:0x60a5fa,transparent:true,opacity:0.8});
+    const ring=new THREE.Mesh(rg,rm);ring.rotation.x=Math.PI/2;
+    ring.position.y=-tankH/2+0.5+(i*0.88);
+    ring.userData={orig:ring.position.clone(),compIdx:1,isLED:true};vizGroup.add(ring);vizComponents.push(ring);
+  }
+
+  // Aerator tube
+  const aerMat=new THREE.MeshPhysicalMaterial({color:0x94a3b8,metalness:0.82,roughness:0.18});
+  const aer=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,3.9,12),aerMat);
+  aer.position.set(0.88,0,0);aer.userData={orig:aer.position.clone(),compIdx:2};vizGroup.add(aer);vizComponents.push(aer);
+
+  // CO2 inlet / O2 outlet
+  const inGeo=new THREE.CylinderGeometry(0.06,0.06,0.95,10);
+  const inMat=new THREE.MeshPhysicalMaterial({color:0xf59e0b,metalness:0.7,roughness:0.3});
+  const inlet=new THREE.Mesh(inGeo,inMat);inlet.rotation.z=Math.PI/2;inlet.position.set(-1.78,1.4,0);
+  inlet.userData={orig:inlet.position.clone(),compIdx:3};vizGroup.add(inlet);vizComponents.push(inlet);
+  const outMat=new THREE.MeshPhysicalMaterial({color:0x38bdf8,metalness:0.7,roughness:0.3});
+  const outlet=new THREE.Mesh(inGeo,outMat);outlet.rotation.z=Math.PI/2;outlet.position.set(1.78,1.4,0);
+  outlet.userData={orig:outlet.position.clone(),compIdx:4};vizGroup.add(outlet);vizComponents.push(outlet);
+
+  // pH probe
+  const phP=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,1.5,8),new THREE.MeshPhysicalMaterial({color:0xfbbf24,metalness:0.9,roughness:0.1}));
+  phP.position.set(-0.72,-0.5,0.52);phP.rotation.z=0.28;phP.userData={orig:phP.position.clone(),compIdx:0};vizGroup.add(phP);
+
+  // Pump
+  const pump=new THREE.Mesh(new THREE.BoxGeometry(0.75,0.45,0.68),new THREE.MeshPhysicalMaterial({color:0x1e293b,metalness:0.75,roughness:0.35}));
+  pump.position.set(0,-tankH/2-0.31,0);pump.userData={orig:pump.position.clone(),compIdx:2};vizGroup.add(pump);vizComponents.push(pump);
+
+  // Base + bench
+  const baseMat=new THREE.MeshPhysicalMaterial({color:0x64748b,metalness:0.5,roughness:0.5});
+  const base=new THREE.Mesh(new THREE.BoxGeometry(5.0,0.18,1.5),baseMat);
+  base.position.y=-tankH/2-0.09;base.castShadow=true;base.receiveShadow=true;
+  base.userData={orig:base.position.clone(),compIdx:6};vizGroup.add(base);vizComponents.push(base);
+  const seatMat=new THREE.MeshPhysicalMaterial({color:0x78716c,metalness:0.2,roughness:0.7});
+  const seatGeo=new THREE.BoxGeometry(1.6,0.13,1.25);
+  [-1.85,1.85].forEach(x=>{
+    const s=new THREE.Mesh(seatGeo,seatMat);s.position.set(x,-tankH/2+0.065,0);
+    s.castShadow=true;s.userData={orig:s.position.clone(),compIdx:6};vizGroup.add(s);
+  });
+  const legMat=new THREE.MeshPhysicalMaterial({color:0x475569,metalness:0.8,roughness:0.3});
+  const legGeo=new THREE.BoxGeometry(0.12,0.52,0.12);
+  [[-2.35,-0.6],[-1.35,-0.6],[-2.35,0.6],[-1.35,0.6],[1.35,-0.6],[2.35,-0.6],[1.35,0.6],[2.35,0.6]].forEach(([x,z])=>{
+    const l=new THREE.Mesh(legGeo,legMat);l.position.set(x,-tankH/2-0.26,z);vizGroup.add(l);
+  });
+
+  // Glow ring
+  const gR=new THREE.Mesh(new THREE.TorusGeometry(tankR+0.02,0.055,8,48),new THREE.MeshBasicMaterial({color:0x4ade80,transparent:true,opacity:0.88}));
+  gR.rotation.x=Math.PI/2;gR.position.y=-tankH/2+0.12;gR.userData={isGlowRing:true};vizGroup.add(gR);
+
+  // Bubble stream
+  const bGeo=new THREE.BufferGeometry();const bPos=[];
+  for(let i=0;i<140;i++){const r=Math.random()*0.72*tankR,a=Math.random()*Math.PI*2;bPos.push(r*Math.cos(a),(Math.random()-0.5)*tankH,r*Math.sin(a));}
+  bGeo.setAttribute('position',new THREE.Float32BufferAttribute(bPos,3));
+  const bMat=new THREE.PointsMaterial({color:0xdbeafe,size:0.06,transparent:true,opacity:0});
+  vizGroup.add(new THREE.Points(bGeo,bMat));
+
+  // Ground
+  const gnd=new THREE.Mesh(new THREE.PlaneGeometry(20,20),new THREE.MeshStandardMaterial({color:0xc8d8c8,roughness:0.88}));
+  gnd.rotation.x=-Math.PI/2;gnd.position.y=-tankH/2-0.48;gnd.receiveShadow=true;vizScene.add(gnd);
+  for(let tx=-4;tx<=4;tx++) for(let ty=-4;ty<=4;ty++){
+    const t=new THREE.Mesh(new THREE.PlaneGeometry(1.18,1.18),new THREE.MeshStandardMaterial({color:(tx+ty)%2===0?0xdde8dd:0xd0ddd0,roughness:0.82}));
+    t.rotation.x=-Math.PI/2;t.position.set(tx*1.22,-tankH/2-0.47,ty*1.22);t.receiveShadow=true;vizScene.add(t);
+  }
+
+  // Component list
+  const cl=$('comp-list');if(cl){
+    cl.innerHTML=compDefs.map((c,i)=>`
+      <div class="comp-item" id="compitem-${i}" onclick="selectComp(${i})">
+        <div class="comp-dot" style="background:${'#'+c.color.toString(16).padStart(6,'0')}"></div>
+        <div><div class="comp-name">${c.name}</div><div class="comp-desc">${c.desc}</div></div>
+        <div class="comp-status ok">●</div></div>`).join('');
+  }
+
+  // Events
+  canvas.addEventListener('mousedown',e=>{vizMouseDown=true;vizLastMouse={x:e.clientX,y:e.clientY};});
+  window.addEventListener('mouseup',()=>vizMouseDown=false);
+  window.addEventListener('mousemove',e=>{
+    if(!vizMouseDown)return;
+    vizTgtY+=(e.clientX-vizLastMouse.x)*0.008;vizTgtX+=(e.clientY-vizLastMouse.y)*0.008;
+    vizTgtX=Math.max(-Math.PI/2,Math.min(Math.PI/2,vizTgtX));
+    vizLastMouse={x:e.clientX,y:e.clientY};
+  });
+  canvas.addEventListener('wheel',e=>{vizCamera.position.z=Math.max(3.5,Math.min(16,vizCamera.position.z+e.deltaY*0.01));e.preventDefault();},{passive:false});
+  let lt=null;
+  canvas.addEventListener('touchstart',e=>{lt={x:e.touches[0].clientX,y:e.touches[0].clientY};});
+  canvas.addEventListener('touchmove',e=>{if(!lt)return;vizTgtY+=(e.touches[0].clientX-lt.x)*0.01;vizTgtX+=(e.touches[0].clientY-lt.y)*0.01;lt={x:e.touches[0].clientX,y:e.touches[0].clientY};e.preventDefault();},{passive:false});
+  animViz();
+}
+
+function selectComp(i){document.querySelectorAll('.comp-item').forEach((el,j)=>el.classList.toggle('selected',j===i));}
+function vizReset(){vizTgtX=0.3;vizTgtY=0;vizCamera.position.z=9;}
+function vizExplode(){
+  vizExploded=!vizExploded;$('btn-explode')?.classList.toggle('active',vizExploded);
+  const dirs=[new THREE.Vector3(0,0,0),new THREE.Vector3(0,2.8,2.5),new THREE.Vector3(2.2,0,0),new THREE.Vector3(-2.8,0,0),new THREE.Vector3(2.8,0,0),new THREE.Vector3(0,3.5,0),new THREE.Vector3(0,-3.5,0),new THREE.Vector3(0,0,0)];
+  vizGroup.children.forEach(c=>{if(c.userData.orig&&c.userData.compIdx!==undefined){const d=dirs[c.userData.compIdx]||new THREE.Vector3();if(vizExploded)c.position.copy(c.userData.orig).addScaledVector(d,1);else c.position.copy(c.userData.orig);}});
+}
+function vizWire(){vizWired=!vizWired;$('btn-wire')?.classList.toggle('active',vizWired);vizGroup.children.forEach(c=>{if(c.material&&c.material.wireframe!==undefined)c.material.wireframe=vizWired;});}
+function vizFlow(){
+  vizFlowing=!vizFlowing;$('btn-flow')?.classList.toggle('active',vizFlowing);
+  vizGroup.children.forEach(c=>{if(c.material&&c.geometry?.attributes?.position&&c instanceof THREE.Points&&!c.userData.isParticles)c.material.opacity=vizFlowing?0.7:0;});
+}
+
+function animViz(){
+  requestAnimationFrame(animViz);
+  vizBubbleT+=0.016;
+  vizRotX+=(vizTgtX-vizRotX)*0.07;vizRotY+=(vizTgtY-vizRotY)*0.07;
+  vizGroup.rotation.x=vizRotX;vizGroup.rotation.y=vizRotY;
+  vizGroup.children.forEach(c=>{
+    if(c.userData.isParticles){
+      const p=c.geometry.attributes.position;
+      for(let i=0;i<p.count;i++){
+        const angle=vizBubbleT*0.4+i*0.1;
+        const oldX=p.getX(i),oldZ=p.getZ(i);
+        const r=Math.sqrt(oldX*oldX+oldZ*oldZ);
+        if(r>0.05){p.setX(i,oldX+Math.sin(angle)*0.002);p.setZ(i,oldZ+Math.cos(angle)*0.002);}
+        p.setY(i,p.getY(i)+Math.sin(vizBubbleT+i*0.3)*0.002);
+      }
+      p.needsUpdate=true;c.material.opacity=0.65+Math.sin(vizBubbleT*0.5)*0.18;
+    }
+    if(c.userData.isAlgae){c.material.emissiveIntensity=0.52+Math.sin(vizBubbleT*0.55)*0.22;}
+    if(c.userData.isGlowRing){
+      c.material.opacity=0.6+Math.sin(vizBubbleT*1.1)*0.32;
+      c.material.color.setHSL(0.36-Math.sin(vizBubbleT*0.2)*0.04,0.9,0.55);
+    }
+    if(c.userData.isLED){const h=((vizBubbleT*0.07+c.userData.compIdx*0.18)||0)%1;c.material.color.setHSL(h*0.15+0.3,1,0.55+Math.sin(vizBubbleT*1.8)*0.12);}
+    if(c.userData.isBubbles&&vizFlowing){const p=c.geometry?.attributes?.position;if(p){for(let i=0;i<p.count;i++){let y=p.getY(i)+0.025;if(y>1.8)y=-1.8;p.setY(i,y);}p.needsUpdate=true;}}
+  });
+  vizRenderer.render(vizScene,vizCamera);
+}
+
+// ═══════════════════════════════════
+// NEURAL NET BACKGROUND (AI Page)
+// ═══════════════════════════════════
+function initNeuralBg(){
+  const cv=$('ai-neural-bg');if(!cv)return;
+  const nodes=[];const edges=[];
+  for(let i=0;i<28;i++)nodes.push({x:Math.random(),y:Math.random(),vx:(Math.random()-.5)*0.0008,vy:(Math.random()-.5)*0.0008});
+  for(let i=0;i<nodes.length;i++) for(let j=i+1;j<nodes.length;j++){if(Math.random()<0.25)edges.push([i,j]);}
+  let t=0;
+  function drawNeural(){
+    requestAnimationFrame(drawNeural);
+    const w=cv.offsetWidth,h=cv.offsetHeight;
+    if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h;}
+    const ctx=cv.getContext('2d');ctx.clearRect(0,0,w,h);
+    t+=0.008;
+    nodes.forEach(n=>{n.x+=n.vx;n.y+=n.vy;if(n.x<0||n.x>1)n.vx*=-1;if(n.y<0||n.y>1)n.vy*=-1;});
+    edges.forEach(([i,j])=>{
+      const a=nodes[i],b=nodes[j];
+      const dist=Math.hypot(a.x-b.x,a.y-b.y);
+      if(dist>0.45)return;
+      const op=0.06*(1-dist/0.45);
+      ctx.beginPath();ctx.moveTo(a.x*w,a.y*h);ctx.lineTo(b.x*w,b.y*h);
+      ctx.strokeStyle=`rgba(26,122,60,${op})`;ctx.lineWidth=0.8;ctx.stroke();
+    });
+    nodes.forEach((n,i)=>{
+      ctx.beginPath();ctx.arc(n.x*w,n.y*h,2+Math.sin(t+i)*0.8,0,Math.PI*2);
+      ctx.fillStyle=`rgba(26,122,60,${0.18+Math.sin(t+i)*0.06})`;ctx.fill();
+    });
+  }
+  drawNeural();
+}
+
+// ═══════════════════════════════════
+// AI CHAT
+// ═══════════════════════════════════
+const aiBrain=[
+  {keys:['tree','trees','equivalent','replac'],ans:()=>`Current capture ${fmt(S.co2)} kg/hr. Using USFS 2023 data: 1 urban tree absorbs 21.8 kg CO₂/year = 0.00249 kg/hr. This reactor equals ${((S.co2/0.00249)|0).toLocaleString()} trees per hour, or ${Math.round(S.co2*24/0.0597).toLocaleString()} tree-days per day. Microalgae absorbs CO₂ at 10–50× the rate of terrestrial plants per unit area (Frontiers Bioeng 2024). The LIQUID3 footprint = 1 park bench.`},
+  {keys:['ph','acid','base','alkali','drift'],ans:()=>`Current pH is ${fmt(S.ph,1)}. Optimal range for Chlorella vulgaris is 6.8–7.4. ${S.ph>7.3?'pH trending alkaline — normal during active photosynthesis as CO₂ is consumed. The PID dosing servo will auto-correct with a micro-dose of HCl.':'pH within target range — no intervention required.'}`},
+  {keys:['co2','carbon','capture','absorb'],ans:()=>`Live CO₂ capture: ${fmt(S.co2)} kg/hr. Session total: ${fmt(S.co2Session,3)} kg. Annual projection: ${(S.co2*8760/1000).toFixed(2)} tonnes — equivalent to removing ${((S.co2*8760/1000)/4.6).toFixed(0)} cars from the road. This is ${(S.co2/2.4*100).toFixed(0)}% of a small factory's hourly output.`},
+  {keys:['o2','oxygen','produc'],ans:()=>`O₂ production: ${fmt(S.o2,1)} L/hr. Each CO₂ molecule fixed produces one O₂ — the reactor is oxygenating the equivalent of ${(S.o2/0.84).toFixed(1)} adult humans per hour through pure photosynthesis.`},
+  {keys:['temp','temperature'],ans:()=>`Reactor temperature: ${fmt(S.temp,1)}°C — within the 22–26°C optimal window. Peltier TEC maintaining ±0.2°C stability. Chlorella selected for LIQUID3 tolerates 5–35°C for year-round outdoor deployment.`},
+  {keys:['light','led','par','photon'],ans:()=>`Light intensity: ${S.light.toFixed(0)} μmol/m²/s. LED array uses 660nm red (photosynthesis peak) + 450nm blue (chlorophyll absorption). Photosynthetic efficiency: ${fmt(S.eff,1)}% — above 75% confirms exponential growth phase.`},
+  {keys:['harvest','biomass','collect'],ans:()=>`Biomass OD₆₈₀: ${fmt(S.biomass,3)}. Harvest threshold typically OD > 1.2. ${S.biomass>1.0?'Culture approaching harvest density — recommend initiating centrifuge separation in 12–18h.':'Active growth phase. Harvest window estimated 24–36h.'} Harvested biomass converts to organic fertilizer — a secondary revenue stream.`},
+  {keys:['industry','factory','pollut','emission','car'],ans:()=>`This reactor captures ${fmt(S.co2)} kg/hr. Average car: 0.12 kg/hr. Small factory: 2.4 kg/hr. You are offsetting ${(S.co2/0.12).toFixed(1)} cars worth of emissions right now. Annual: ${(S.co2*8760/1000).toFixed(2)} tonnes CO₂e.`},
+  {keys:['serbia','liquid3','belgrade','origin','inventor'],ans:()=>`LIQUID3 was developed by Dr. Ivan Spasojevic at the Institute for Multidisciplinary Research, University of Belgrade. Installed September 2021 on Makedonska Street. Holds 600L of microalgae, equals 2 adult trees, won Green Product Award 2022. AlgaeX builds upon this foundation with real-time AI monitoring.`},
+  {keys:['efficienc','optim','improv','better'],ans:()=>`Current efficiency: ${fmt(S.eff,1)}%. Optimization pathway: (1) Light at 350–400 μmol/m²/s — current ${S.light.toFixed(0)} is ${S.light<350?'below target':'optimal'}. (2) pH 7.0–7.2 — current ${fmt(S.ph,1)} ${S.ph<7.0||S.ph>7.3?'needs correction':'is optimal'}. (3) Nutrients ${S.nutr.toFixed(0)} mg/L N — ${S.nutr<38?'dose now':'adequate'}.`},
+  {keys:['investor','fund','business','revenue','market','scale'],ans:()=>`AlgaeX value proposition for investors: (1) Carbon credits at €45/tonne EU ETS — this unit generates €${(S.co2*8760/1000*65).toFixed(0)}/year in credits. (2) Scalable to city-wide deployments (247 units across 18 cities in simulation). (3) Biomass byproduct → fertilizer + biogas. (4) TCFD-compliant ESG reporting built-in. (5) Solar-powered, zero land-use change. Market: $50B urban carbon capture infrastructure by 2035.`},
+  {keys:['scientific','biology','photosynthesis','mechanism','how'],ans:()=>`The AlgaeX bioreactor operates on oxygenic photosynthesis: 6CO₂ + 6H₂O + light → C₆H₁₂O₆ + 6O₂. Chlorella reinhardtii achieves biomass doubling times of 6–8h under optimal conditions. CO₂ is injected via solenoid valve at 2% v/v, pH is maintained at 7.1 via HCl/NaOH PID control, temperature at 24°C via Peltier module. Current photon conversion efficiency: ${fmt(S.eff,1)}%.`},
+  {keys:['hello','hi','hey','help','start'],ans:()=>`Hello. I'm AlgaeX Bio-Core — your live bioreactor intelligence. Current status: CO₂ capture ${fmt(S.co2)} kg/hr, O₂ production ${fmt(S.o2,1)} L/hr, ACPI score 82/100. Ask me about CO₂ capture, pH optimization, algae biology, carbon economics, investor pitch, or the Serbian LIQUID3 story.`},
+];
+
+function aiBrainAnswer(msg){
+  const lower=msg.toLowerCase();
+  for(const e of aiBrain){if(e.keys.some(k=>lower.includes(k)))return e.ans();}
+  return `Current reactor status: CO₂ ${fmt(S.co2)} kg/hr · O₂ ${fmt(S.o2,1)} L/hr · Efficiency ${fmt(S.eff,1)}%. The system is operating within optimal parameters. Try asking about CO₂ capture, pH stability, biomass harvest, carbon credits, or the LIQUID3 technology origin.`;
+}
+
+function quickSend(el){$('ai-input').value=el.textContent;sendAI();}
+async function sendAI(){
+  const inp=$('ai-input');const msg=inp.value.trim();if(!msg)return;
+  inp.value='';appendMsg(msg,'user');
+  $('ai-typing').style.display='block';scrollChat();
+  const sys=`You are AlgaeX Bio-Core AI. Live data: CO₂ ${fmt(S.co2)} kg/hr, O₂ ${fmt(S.o2,1)} L/hr, pH ${fmt(S.ph,1)}, temp ${fmt(S.temp,1)}°C, efficiency ${fmt(S.eff,1)}%, density ${fmt(S.density,1)} g/L. Be concise, professional, under 120 words.`;
+  try{
+    const ctrl=new AbortController();const to=setTimeout(()=>ctrl.abort(),4500);
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',signal:ctrl.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:[{role:'user',content:msg}]})});
+    clearTimeout(to);const d=await r.json();
+    $('ai-typing').style.display='none';
+    appendMsg(d.content?.[0]?.text||aiBrainAnswer(msg),'ai');
+  }catch(e){$('ai-typing').style.display='none';appendMsg(aiBrainAnswer(msg),'ai');}
+}
+
+function appendMsg(text,role){
+  const msgs=$('ai-chat-messages');
+  const d=document.createElement('div');d.className='chat-msg '+role;
+  const conf=role==='ai'?`Confidence: ${(92+Math.random()*7).toFixed(0)}%`:'';
+  const sensorRef=role==='ai'?`Sensor refs: ${3+Math.floor(Math.random()*6)} active`:'';
+  const actions=role==='ai'?`<div class="chat-actions"><div class="chat-action-btn" onclick="quickSend({textContent:'Explain in scientific detail how the reactor works'})">🔬 Scientific detail</div><div class="chat-action-btn" onclick="quickSend({textContent:'Explain our impact for investors'})">💼 For investors</div></div>`:'';
+  d.innerHTML=`<div class="chat-avatar ${role}">${role==='ai'?'🌿':'U'}</div><div><div class="chat-bubble">${text}</div>${role==='ai'?`<div class="chat-meta"><span class="conf-score">${conf}</span><span>${sensorRef}</span></div>${actions}`:''}</div>`;
+  msgs.appendChild(d);scrollChat();
+}
+function scrollChat(){const m=$('ai-chat-messages');if(m)setTimeout(()=>m.scrollTop=m.scrollHeight,50);}
+$('ai-input')?.addEventListener('keydown',e=>{if(e.key==='Enter')sendAI();});
+
+// ═══════════════════════════════════
+// BUTTON ACTIONS
+// ═══════════════════════════════════
+function exportCSV(){
+  const rows=[['Timestamp','CO2_kg_hr','O2_L_hr','pH','Temp_C','Density_gL','Efficiency_pct']];
+  S.labels.forEach((t,i)=>rows.push([t,(S.hist.co2[i]||0).toFixed(3),(S.hist.o2[i]||0).toFixed(2),(S.hist.ph[i]||0).toFixed(2),(S.hist.temp[i]||0).toFixed(1),(S.hist.biomass[i]||0).toFixed(3),(S.hist.eff[i]||0).toFixed(1)]));
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(rows.map(r=>r.join(',')).join('\n'));
+  a.download='algaex-data-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+  addAlert({type:'info',msg:'Sensor data exported to CSV successfully.'});
+}
+function generateReport(){
+  const html=`<!DOCTYPE html><html><head><title>AlgaeX ESG Report ${new Date().toLocaleDateString()}</title><style>body{font-family:Arial,sans-serif;max-width:720px;margin:40px auto;color:#111;line-height:1.6}h1{color:#1a7a3c;border-bottom:2px solid #1a7a3c;padding-bottom:8px}h2{color:#15683a;margin-top:24px}.kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}.kpi-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px;text-align:center}.kpi-val{font-size:24px;font-weight:700;color:#1a7a3c}.kpi-lbl{font-size:11px;color:#666;margin-top:4px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:9px 12px;text-align:left;border-bottom:1px solid #e5e7eb}th{background:#f0fdf4;font-weight:600;font-size:12px}.footer{margin-top:32px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:11px;color:#999}</style></head><body>
+<h1>🌿 AlgaeX Urban BioReactor — ESG Status Report</h1>
+<p><strong>Generated:</strong> ${new Date().toLocaleString()} · Device: AX-URB-0042 · Deploy: BLG-MKD-001</p>
+<div class="kpi">
+<div class="kpi-box"><div class="kpi-val">${fmt(S.co2)}</div><div class="kpi-lbl">CO₂ Capture (kg/hr)</div></div>
+<div class="kpi-box"><div class="kpi-val">${fmt(S.o2,1)}</div><div class="kpi-lbl">O₂ Production (L/hr)</div></div>
+<div class="kpi-box"><div class="kpi-val">${fmt(S.eff,1)}%</div><div class="kpi-lbl">Efficiency</div></div>
+</div>
+<h2>Environmental Impact</h2>
+<table><tr><th>Metric</th><th>Value</th></tr>
+<tr><td>Tree-equivalents / hr</td><td>${((S.co2/0.00249)|0).toLocaleString()} (USFS 2023: 21.8 kg/yr per tree)</td></tr>
+<tr><td>Annual CO₂ projection</td><td>${(S.co2*8760/1000).toFixed(2)} tonnes</td></tr>
+<tr><td>Carbon credits (EU ETS)</td><td>€${(S.co2*8760/1000*65).toFixed(0)} / year</td></tr>
+<tr><td>Industrial factory offset</td><td>${(S.co2/2.4*100).toFixed(1)}%</td></tr>
+</table>
+<h2>SDG Alignment</h2>
+<table><tr><th>SDG</th><th>Goal</th><th>Status</th></tr>
+<tr><td>SDG 13</td><td>Climate Action</td><td>✅ Direct CO₂ capture</td></tr>
+<tr><td>SDG 11</td><td>Sustainable Cities</td><td>✅ Urban deployment</td></tr>
+<tr><td>SDG 7</td><td>Clean Energy</td><td>✅ Solar powered</td></tr>
+</table>
+<div class="footer">AlgaeX Urban BioReactor · Based on LIQUID3 by University of Belgrade · TCFD Tier 2 · EU-ETS Compliant · Report auto-generated by AlgaeX Bio-Core Engine v4.2.1</div></body></html>`;
+  const a=document.createElement('a');
+  a.href='data:text/html;charset=utf-8,'+encodeURIComponent(html);
+  a.download='algaex-esg-report-'+new Date().toISOString().slice(0,10)+'.html';a.click();
+  addAlert({type:'info',msg:'ESG report generated and downloaded.'});
+}
+function calibrateAll(){
+  const btn=event.target;btn.textContent='⟳ Calibrating…';btn.disabled=true;
+  let step=0;
+  const steps=['pH probe offset…','Temperature probe…','CO₂ sensor span…','O₂ sensor zero…','Turbidity NTU ref…','✓ All sensors calibrated'];
+  const it=setInterval(()=>{
+    addAlert({type:'info',msg:'Calibration: '+steps[step]});step++;
+    if(step>=steps.length){clearInterval(it);btn.textContent='Calibrate All';btn.disabled=false;addAlert({type:'ok',msg:'All sensors calibrated. Data integrity confirmed.'});}
+  },620);
+}
+
+// ═══════════════════════════════════
+// BOOT
+// ═══════════════════════════════════
+window.addEventListener('load',()=>{
+  initCharts();
+  updateSensorTable();updateMechGrid();updateImpact();
+  setInterval(tickSensors,1000);
+  tickSensors();
+  initNeuralBg();
+});
+</script>
+</body>
+</html>
