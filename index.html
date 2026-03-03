@@ -1,0 +1,1851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlgaeX Urban — Command Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:        #f0f4f1;
+  --surface:   #ffffff;
+  --surface2:  #f5f8f5;
+  --surface3:  #eaf1eb;
+  --border:    #d4e4d8;
+  --border2:   #bcd4c2;
+  --accent:    #16a34a;
+  --accent2:   #15803d;
+  --accent3:   #14532d;
+  --teal:      #0d9488;
+  --amber:     #d97706;
+  --red:       #dc2626;
+  --blue:      #2563eb;
+  --sky:       #0284c7;
+  --text-primary:   #0f1f14;
+  --text-secondary: #3d6b4f;
+  --text-muted:     #6b9a7c;
+  --sidebar-w: 220px;
+  --header-h:  56px;
+  --radius:    10px;
+  --radius-sm: 6px;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { font-size:14px; }
+body {
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg); color:var(--text-primary);
+  height:100vh; overflow:hidden;
+  display:flex; flex-direction:column;
+}
+
+/* ═══════════════ TOP BAR ═══════════════ */
+#topbar {
+  height:var(--header-h); min-height:var(--header-h);
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; padding:0 20px;
+  gap:16px; z-index:100;
+}
+.tb-logo {
+  display:flex; align-items:center; gap:10px;
+  width:var(--sidebar-w); min-width:var(--sidebar-w);
+}
+.tb-logo-mark {
+  width:32px; height:32px; border-radius:8px;
+  background:linear-gradient(135deg,var(--accent2),var(--accent3));
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Syne',sans-serif; font-weight:800;
+  font-size:13px; color:#000; letter-spacing:-0.5px;
+  flex-shrink:0;
+}
+.tb-logo-text { line-height:1.1; }
+.tb-name { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; color:var(--text-primary); }
+.tb-tagline { font-size:10px; color:var(--text-muted); font-family:'DM Mono',monospace; }
+.tb-divider { width:1px; height:28px; background:var(--border2); }
+.tb-status { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-secondary); }
+.live-dot {
+  width:7px; height:7px; border-radius:50%;
+  background:var(--accent); flex-shrink:0;
+  animation:livepulse 1.8s ease-in-out infinite;
+}
+@keyframes livepulse {
+  0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.6)}
+  50%{box-shadow:0 0 0 5px rgba(34,197,94,0)}
+}
+.tb-spacer { flex:1; }
+.tb-clock {
+  font-family:'DM Mono',monospace; font-size:13px;
+  color:var(--text-secondary); letter-spacing:0.5px;
+}
+.tb-badge {
+  padding:4px 10px; border-radius:4px; font-size:11px;
+  font-family:'DM Mono',monospace; letter-spacing:0.3px;
+  border:1px solid var(--border2); color:var(--text-secondary);
+  background:var(--surface2);
+}
+.tb-badge.warn { border-color:rgba(245,158,11,0.4); color:var(--amber); background:rgba(245,158,11,0.07); }
+.tb-avatar {
+  width:30px; height:30px; border-radius:50%;
+  background:linear-gradient(135deg,var(--surface3),var(--border2));
+  border:1px solid var(--border2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; color:var(--accent); font-weight:600; cursor:pointer;
+}
+
+/* ═══════════════ BODY ═══════════════ */
+#body { display:flex; flex:1; overflow:hidden; }
+
+/* ═══════════════ SIDEBAR ═══════════════ */
+#sidebar {
+  width:var(--sidebar-w); min-width:var(--sidebar-w);
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex; flex-direction:column;
+  overflow-y:auto; overflow-x:hidden;
+  padding:12px 0;
+}
+#sidebar::-webkit-scrollbar { width:0; }
+.nav-section-label {
+  font-size:9px; font-family:'DM Mono',monospace;
+  color:var(--text-muted); letter-spacing:1.5px; text-transform:uppercase;
+  padding:12px 16px 6px;
+}
+.nav-item {
+  display:flex; align-items:center; gap:10px;
+  padding:9px 16px; cursor:pointer; border-radius:0;
+  font-size:13px; font-weight:500; color:var(--text-secondary);
+  position:relative; transition:all 0.15s; margin:1px 8px;
+  border-radius:var(--radius-sm);
+}
+.nav-item:hover { background:var(--surface3); color:var(--text-primary); }
+.nav-item.active {
+  background:rgba(34,197,94,0.1);
+  color:var(--accent3);
+  border:1px solid rgba(34,197,94,0.15);
+}
+.nav-item.active .nav-icon { color:var(--accent); }
+.nav-icon { font-size:15px; width:18px; text-align:center; flex-shrink:0; }
+.nav-badge {
+  margin-left:auto; font-size:9px; padding:1px 6px;
+  border-radius:3px; font-family:'DM Mono',monospace;
+}
+.nav-badge.live { background:rgba(34,197,94,0.15); color:var(--accent); }
+.nav-badge.warn { background:rgba(245,158,11,0.12); color:var(--amber); }
+.sidebar-footer {
+  margin-top:auto; padding:12px;
+  border-top:1px solid var(--border);
+}
+.sys-health {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:10px 12px;
+}
+.sys-health-title { font-size:10px; color:var(--text-muted); font-family:'DM Mono',monospace; letter-spacing:1px; margin-bottom:8px; }
+.health-bar-row { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+.health-label { font-size:10px; color:var(--text-secondary); width:50px; flex-shrink:0; }
+.health-bar { flex:1; height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+.health-fill { height:100%; border-radius:2px; transition:width 1s ease; }
+.health-val { font-size:10px; color:var(--text-secondary); width:30px; text-align:right; font-family:'DM Mono',monospace; }
+
+/* ═══════════════ CONTENT ═══════════════ */
+#content { flex:1; overflow:hidden; position:relative; }
+.page { position:absolute; inset:0; overflow-y:auto; overflow-x:hidden; display:none; padding:20px; }
+.page.active { display:block; }
+.page::-webkit-scrollbar { width:5px; }
+.page::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+
+/* ═══════════════ CARDS ═══════════════ */
+.card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); overflow:hidden;
+}
+.card-header {
+  padding:14px 16px 12px;
+  display:flex; align-items:center; justify-content:space-between;
+  border-bottom:1px solid var(--border);
+}
+.card-title { font-size:13px; font-weight:600; color:var(--text-primary); }
+.card-sub { font-size:11px; color:var(--text-muted); font-family:'DM Mono',monospace; }
+.card-body { padding:16px; }
+
+/* KPI ROW */
+.kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
+.kpi-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:16px;
+  position:relative; overflow:hidden;
+}
+.kpi-card::after {
+  content:''; position:absolute; bottom:0; left:0; right:0; height:2px;
+}
+.kpi-card.green::after { background:linear-gradient(90deg,transparent,var(--accent),transparent); }
+.kpi-card.teal::after  { background:linear-gradient(90deg,transparent,var(--teal),transparent); }
+.kpi-card.amber::after { background:linear-gradient(90deg,transparent,var(--amber),transparent); }
+.kpi-card.blue::after  { background:linear-gradient(90deg,transparent,var(--blue),transparent); }
+.kpi-label { font-size:11px; color:var(--text-muted); font-family:'DM Mono',monospace; letter-spacing:0.3px; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+.kpi-value { font-family:'Syne',sans-serif; font-size:28px; font-weight:700; line-height:1; margin-bottom:6px; }
+.kpi-value.green { color:var(--accent3); }
+.kpi-value.teal  { color:var(--teal); }
+.kpi-value.amber { color:var(--amber); }
+.kpi-value.blue  { color:var(--sky); }
+.kpi-unit { font-size:12px; color:var(--text-muted); font-weight:400; margin-left:3px; }
+.kpi-change { font-size:11px; display:flex; align-items:center; gap:4px; }
+.up   { color:var(--accent); }
+.down { color:var(--red); }
+.flat { color:var(--text-muted); }
+
+/* CHARTS GRID */
+.charts-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+.charts-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:12px; }
+.chart-wrap { position:relative; height:180px; padding:0 4px; }
+.chart-wrap canvas { width:100%!important; height:100%!important; }
+
+/* SENSOR TABLE */
+.sensor-table { width:100%; border-collapse:collapse; }
+.sensor-table th {
+  font-size:10px; font-family:'DM Mono',monospace; color:var(--text-muted);
+  text-align:left; padding:8px 12px; letter-spacing:0.5px; text-transform:uppercase;
+  border-bottom:1px solid var(--border);
+}
+.sensor-table td { padding:10px 12px; font-size:12px; border-bottom:1px solid rgba(36,51,40,0.5); }
+.sensor-table tr:last-child td { border-bottom:none; }
+.sensor-table tr:hover td { background:rgba(34,197,94,0.03); }
+.sensor-name { color:var(--text-primary); font-weight:500; }
+.sensor-val-cell { font-family:'DM Mono',monospace; color:var(--text-primary); }
+.sensor-unit-cell { color:var(--text-muted); font-family:'DM Mono',monospace; font-size:10px; }
+.sensor-status-cell { }
+.status-chip {
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:10px; font-family:'DM Mono',monospace;
+  padding:2px 8px; border-radius:3px; letter-spacing:0.3px;
+}
+.status-chip.ok   { background:rgba(34,197,94,0.1); color:var(--accent3); border:1px solid rgba(34,197,94,0.2); }
+.status-chip.warn { background:rgba(245,158,11,0.1); color:var(--amber); border:1px solid rgba(245,158,11,0.2); }
+.status-chip.err  { background:rgba(239,68,68,0.1); color:var(--red); border:1px solid rgba(239,68,68,0.2); }
+.mini-bar { width:80px; height:4px; background:var(--border); border-radius:2px; overflow:hidden; display:inline-block; vertical-align:middle; margin-left:8px; }
+.mini-fill { height:100%; border-radius:2px; transition:width 1s; }
+
+/* MECH TABLE */
+.mech-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.mech-card {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:12px 14px;
+  display:flex; align-items:center; gap:12px;
+}
+.mech-icon-wrap {
+  width:36px; height:36px; border-radius:8px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; background:var(--surface3); border:1px solid var(--border2);
+}
+.mech-info { flex:1; min-width:0; }
+.mech-name { font-size:12px; font-weight:600; color:var(--text-primary); }
+.mech-sub  { font-size:10px; color:var(--text-muted); font-family:'DM Mono',monospace; margin-top:1px; }
+.mech-right { text-align:right; }
+.mech-val  { font-family:'DM Mono',monospace; font-size:12px; color:var(--text-secondary); }
+
+/* IMPACT CARDS */
+.impact-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:12px; }
+.impact-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:16px 14px; text-align:center;
+}
+.impact-emoji { font-size:24px; margin-bottom:8px; }
+.impact-num { font-family:'Syne',sans-serif; font-size:22px; font-weight:700; margin-bottom:3px; }
+.impact-label { font-size:10px; color:var(--text-muted); font-family:'DM Mono',monospace; letter-spacing:0.3px; }
+.impact-sub { font-size:10px; color:var(--text-secondary); margin-top:4px; }
+.impact-track { height:3px; background:var(--border); border-radius:2px; margin-top:10px; overflow:hidden; }
+.impact-prog { height:100%; border-radius:2px; transition:width 1s; }
+
+/* ALERTS */
+.alert-list { display:flex; flex-direction:column; gap:6px; }
+.alert-row {
+  display:flex; align-items:flex-start; gap:10px;
+  padding:10px 12px; border-radius:var(--radius-sm);
+  border:1px solid; font-size:12px;
+}
+.alert-row.ok   { background:rgba(34,197,94,0.04);  border-color:rgba(34,197,94,0.15); }
+.alert-row.warn { background:rgba(245,158,11,0.04); border-color:rgba(245,158,11,0.15); }
+.alert-row.info { background:rgba(59,130,246,0.04); border-color:rgba(59,130,246,0.15); }
+.alert-dot { width:6px; height:6px; border-radius:50%; margin-top:4px; flex-shrink:0; }
+.alert-dot.ok   { background:var(--accent); }
+.alert-dot.warn { background:var(--amber); }
+.alert-dot.info { background:var(--blue); }
+.alert-text  { flex:1; color:var(--text-primary); line-height:1.4; }
+.alert-time  { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-muted); flex-shrink:0; margin-top:1px; }
+
+/* 3D PAGE */
+#page-3d { padding:0!important; }
+#viz-layout { display:flex; height:100%; }
+#viz-canvas-wrap {
+  flex:1; position:relative;
+  background:radial-gradient(ellipse at 40% 50%, #d4edd9 0%, #e8f4eb 70%);
+}
+#viz-canvas { width:100%; height:100%; display:block; }
+#viz-overlay {
+  position:absolute; top:0; left:0; right:0; bottom:0; pointer-events:none;
+}
+#viz-title-block {
+  position:absolute; top:20px; left:24px;
+}
+#viz-title-block h2 { font-family:'Syne',sans-serif; font-size:18px; font-weight:700; color:var(--text-primary); }
+#viz-title-block p  { font-size:11px; color:var(--text-secondary); font-family:'DM Mono',monospace; margin-top:3px; }
+#viz-hint {
+  position:absolute; bottom:60px; left:0; right:0; text-align:center;
+  font-size:11px; color:var(--text-muted); font-family:'DM Mono',monospace;
+}
+#viz-controls {
+  position:absolute; bottom:20px; left:0; right:0;
+  display:flex; justify-content:center; gap:8px; pointer-events:all;
+}
+.viz-btn {
+  padding:6px 14px; font-size:11px; cursor:pointer;
+  background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.2);
+  color:var(--accent3); border-radius:var(--radius-sm); font-family:'DM Mono',monospace;
+  transition:all 0.2s; letter-spacing:0.5px;
+}
+.viz-btn:hover { background:rgba(34,197,94,0.15); border-color:rgba(34,197,94,0.4); }
+.viz-btn.active { background:rgba(34,197,94,0.2); border-color:var(--accent); }
+#viz-info-panel {
+  position:absolute; top:60px; right:20px;
+  background:rgba(255,255,255,0.92); border:1px solid var(--border2);
+  border-radius:var(--radius-sm); padding:12px 14px; min-width:180px;
+  backdrop-filter:blur(8px); box-shadow:0 4px 16px rgba(0,0,0,0.1);
+}
+.viz-info-row { display:flex; justify-content:space-between; gap:16px; margin-bottom:6px; font-size:11px; }
+.viz-info-row:last-child { margin-bottom:0; }
+.viz-info-label { color:var(--text-muted); font-family:'DM Mono',monospace; }
+.viz-info-val   { color:var(--accent3); font-family:'DM Mono',monospace; }
+#viz-component-tooltip {
+  position:absolute; pointer-events:none;
+  background:rgba(255,255,255,0.95); border:1px solid var(--border2);
+  border-radius:var(--radius-sm); padding:8px 12px;
+  font-size:11px; color:var(--text-primary); backdrop-filter:blur(8px);
+  display:none; white-space:nowrap; box-shadow:0 4px 12px rgba(0,0,0,0.12);
+}
+#viz-sidebar {
+  width:260px; min-width:260px;
+  background:var(--surface); border-left:1px solid var(--border);
+  display:flex; flex-direction:column; overflow-y:auto; padding:16px;
+}
+#viz-sidebar::-webkit-scrollbar { width:3px; }
+#viz-sidebar::-webkit-scrollbar-thumb { background:var(--border2); }
+.viz-sidebar-title { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; margin-bottom:4px; }
+.viz-sidebar-sub   { font-size:11px; color:var(--text-muted); font-family:'DM Mono',monospace; margin-bottom:16px; }
+.component-list { display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
+.comp-item {
+  display:flex; align-items:center; gap:10px;
+  padding:9px 10px; border-radius:var(--radius-sm); cursor:pointer;
+  border:1px solid transparent; transition:all 0.15s;
+}
+.comp-item:hover { background:var(--surface3); border-color:var(--border2); }
+.comp-item.selected { background:rgba(34,197,94,0.08); border-color:rgba(34,197,94,0.25); }
+.comp-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.comp-name { font-size:12px; font-weight:500; color:var(--text-primary); }
+.comp-desc { font-size:10px; color:var(--text-muted); }
+.comp-status { margin-left:auto; font-size:10px; font-family:'DM Mono',monospace; }
+.comp-status.ok   { color:var(--accent); }
+.comp-status.warn { color:var(--amber); }
+.viz-spec-block {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:12px; margin-top:8px;
+}
+.viz-spec-title { font-size:11px; font-family:'DM Mono',monospace; color:var(--text-muted); letter-spacing:0.5px; margin-bottom:10px; }
+.viz-spec-row { display:flex; justify-content:space-between; margin-bottom:6px; font-size:11px; }
+.viz-spec-key { color:var(--text-secondary); }
+.viz-spec-val { color:var(--text-primary); font-family:'DM Mono',monospace; }
+
+/* AI PAGE */
+#ai-layout { display:flex; height:100%; gap:0; }
+#ai-chat-area { flex:1; display:flex; flex-direction:column; border-right:1px solid var(--border); }
+#ai-chat-header {
+  padding:14px 20px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:12px; background:var(--surface2);
+}
+#ai-chat-messages {
+  flex:1; overflow-y:auto; padding:20px;
+  display:flex; flex-direction:column; gap:12px;
+}
+#ai-chat-messages::-webkit-scrollbar { width:4px; }
+#ai-chat-messages::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+.chat-msg { display:flex; gap:10px; max-width:85%; }
+.chat-msg.user { flex-direction:row-reverse; align-self:flex-end; }
+.chat-avatar {
+  width:28px; height:28px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:600; margin-top:2px;
+}
+.chat-avatar.ai   { background:rgba(34,197,94,0.15); color:var(--accent); border:1px solid rgba(34,197,94,0.2); }
+.chat-avatar.user { background:rgba(59,130,246,0.15); color:var(--sky); border:1px solid rgba(59,130,246,0.2); }
+.chat-bubble {
+  padding:10px 14px; border-radius:10px; font-size:13px; line-height:1.55;
+  max-width:100%;
+}
+.chat-msg.ai   .chat-bubble { background:var(--surface2); border:1px solid var(--border2); color:var(--text-primary); border-radius:4px 10px 10px 10px; }
+.chat-msg.user .chat-bubble { background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2); color:var(--text-primary); border-radius:10px 4px 10px 10px; }
+.chat-sys { text-align:center; font-size:10px; color:var(--text-muted); font-family:'DM Mono',monospace; padding:4px 0; }
+#ai-input-bar {
+  padding:14px 16px; border-top:1px solid var(--border);
+  display:flex; gap:8px; background:var(--surface2);
+}
+#ai-input {
+  flex:1; background:var(--surface); border:1px solid var(--border2);
+  border-radius:var(--radius-sm); padding:9px 14px;
+  font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-primary); outline:none;
+  transition:border 0.15s;
+}
+#ai-input:focus { border-color:var(--accent2); }
+#ai-input::placeholder { color:var(--text-muted); }
+#ai-send {
+  padding:9px 18px; background:var(--accent2);
+  border:none; border-radius:var(--radius-sm); color:#fff;
+  font-weight:600; font-size:13px; cursor:pointer;
+  font-family:'DM Sans',sans-serif; transition:background 0.15s;
+}
+#ai-send:hover { background:var(--accent); }
+#ai-sidebar {
+  width:240px; min-width:240px;
+  padding:16px; overflow-y:auto;
+}
+#ai-sidebar::-webkit-scrollbar { width:3px; }
+.ai-sidebar-section { margin-bottom:16px; }
+.ai-section-title { font-size:10px; font-family:'DM Mono',monospace; color:var(--text-muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
+.ai-context-card {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:6px;
+}
+.ai-ctx-label { font-size:10px; color:var(--text-muted); font-family:'DM Mono',monospace; margin-bottom:3px; }
+.ai-ctx-val   { font-size:13px; font-weight:600; font-family:'DM Mono',monospace; }
+.ai-ctx-val.green { color:var(--accent3); }
+.ai-ctx-val.teal  { color:var(--teal); }
+.ai-ctx-val.amber { color:var(--amber); }
+.quick-prompt {
+  padding:8px 10px; border-radius:var(--radius-sm); cursor:pointer;
+  background:var(--surface2); border:1px solid var(--border);
+  font-size:11px; color:var(--text-secondary); margin-bottom:5px;
+  transition:all 0.15s; line-height:1.4;
+}
+.quick-prompt:hover { background:var(--surface3); border-color:var(--border2); color:var(--text-primary); }
+.typing-indicator {
+  display:flex; gap:4px; align-items:center;
+  padding:10px 14px; background:var(--surface2);
+  border:1px solid var(--border2); border-radius:4px 10px 10px 10px;
+}
+.typing-dot {
+  width:5px; height:5px; border-radius:50%; background:var(--accent2);
+  animation:tdot 1.2s ease-in-out infinite;
+}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes tdot{0%,60%,100%{transform:translateY(0)opacity:1}30%{transform:translateY(-5px)}}
+
+/* PAGE HEADER */
+.page-header { margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; }
+.page-h-left h1 { font-family:'Syne',sans-serif; font-size:18px; font-weight:700; color:var(--text-primary); }
+.page-h-left p  { font-size:12px; color:var(--text-muted); margin-top:2px; font-family:'DM Mono',monospace; }
+.page-h-right { display:flex; gap:8px; }
+.btn-outline {
+  padding:7px 14px; border-radius:var(--radius-sm); font-size:12px;
+  border:1px solid var(--border2); color:var(--text-secondary);
+  background:transparent; cursor:pointer; font-family:'DM Sans',sans-serif;
+  transition:all 0.15s;
+}
+.btn-outline:hover { border-color:var(--accent2); color:var(--accent3); }
+.btn-primary {
+  padding:7px 14px; border-radius:var(--radius-sm); font-size:12px;
+  border:1px solid var(--accent2); color:var(--accent);
+  background:rgba(34,197,94,0.1); cursor:pointer;
+  font-family:'DM Sans',sans-serif; font-weight:600; transition:all 0.15s;
+}
+.btn-primary:hover { background:rgba(34,197,94,0.18); }
+
+/* SECTION DIVIDER */
+.section-label {
+  font-size:10px; font-family:'DM Mono',monospace; color:var(--text-muted);
+  letter-spacing:1px; text-transform:uppercase; margin:16px 0 8px;
+  display:flex; align-items:center; gap:8px;
+}
+.section-label::after { content:''; flex:1; height:1px; background:var(--border); }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <div class="tb-logo">
+    <div class="tb-logo-mark">AX</div>
+    <div class="tb-logo-text">
+      <div class="tb-name">AlgaeX Urban</div>
+      <div class="tb-tagline">BIOREACTOR PLATFORM v4.2</div>
+    </div>
+  </div>
+  <div class="tb-divider"></div>
+  <div class="tb-status"><div class="live-dot"></div>Live sensor feed active</div>
+  <div class="tb-divider"></div>
+  <div class="tb-badge">Reactor: <strong style="color:var(--accent3)">ONLINE</strong></div>
+  <div class="tb-badge warn">⚠ Pump B standby</div>
+  <div class="tb-spacer"></div>
+  <div class="tb-clock" id="clock">--:--:--</div>
+  <div class="tb-divider"></div>
+  <div class="tb-avatar">AX</div>
+</div>
+
+<!-- BODY -->
+<div id="body">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="nav-section-label">Monitoring</div>
+    <div class="nav-item active" onclick="navTo('overview')">
+      <span class="nav-icon">⬛</span> Overview <span class="nav-badge live">Live</span>
+    </div>
+    <div class="nav-item" onclick="navTo('sensors')">
+      <span class="nav-icon">📡</span> Sensors
+    </div>
+    <div class="nav-item" onclick="navTo('mechatronics')">
+      <span class="nav-icon">⚙️</span> Mechatronics <span class="nav-badge warn">1</span>
+    </div>
+
+    <div class="nav-section-label">Analysis</div>
+    <div class="nav-item" onclick="navTo('impact')">
+      <span class="nav-icon">🌍</span> Impact
+    </div>
+    <div class="nav-item" onclick="navTo('charts')">
+      <span class="nav-icon">📊</span> Analytics
+    </div>
+
+    <div class="nav-section-label">Visualization</div>
+    <div class="nav-item" onclick="navTo('3d')">
+      <span class="nav-icon">🧬</span> 3D BioReactor
+    </div>
+
+    <div class="nav-section-label">System</div>
+    <div class="nav-item" onclick="navTo('ai')">
+      <span class="nav-icon">🤖</span> AI Assistant <span class="nav-badge live">AI</span>
+    </div>
+    <div class="nav-item" onclick="navTo('logs')">
+      <span class="nav-icon">📋</span> System Logs
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sys-health">
+        <div class="sys-health-title">SYSTEM HEALTH</div>
+        <div class="health-bar-row">
+          <div class="health-label">CPU</div>
+          <div class="health-bar"><div class="health-fill" id="h-cpu" style="background:var(--accent);width:34%"></div></div>
+          <div class="health-val" id="h-cpu-v">34%</div>
+        </div>
+        <div class="health-bar-row">
+          <div class="health-label">Memory</div>
+          <div class="health-bar"><div class="health-fill" id="h-mem" style="background:var(--teal);width:58%"></div></div>
+          <div class="health-val" id="h-mem-v">58%</div>
+        </div>
+        <div class="health-bar-row">
+          <div class="health-label">Storage</div>
+          <div class="health-bar"><div class="health-fill" id="h-stor" style="background:var(--blue);width:21%"></div></div>
+          <div class="health-val" id="h-stor-v">21%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div id="content">
+
+    <!-- ══════════ PAGE: OVERVIEW ══════════ -->
+    <div class="page active" id="page-overview">
+      <div class="page-header">
+        <div class="page-h-left">
+          <h1>Overview</h1>
+          <p>Real-time bioreactor monitoring dashboard</p>
+        </div>
+        <div class="page-h-right">
+          <button class="btn-outline" onclick="exportCSV()">Export CSV</button>
+          <button class="btn-primary" onclick="generateReport()">▶ Generate Report</button>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi-card green">
+          <div class="kpi-label"><span>CO₂ CAPTURE</span></div>
+          <div class="kpi-value green" id="kpi-co2">—<span class="kpi-unit">kg/hr</span></div>
+          <div class="kpi-change up" id="kpi-co2-ch">↑ +0.12 from last hour</div>
+        </div>
+        <div class="kpi-card teal">
+          <div class="kpi-label">O₂ PRODUCTION</div>
+          <div class="kpi-value teal" id="kpi-o2">—<span class="kpi-unit">L/hr</span></div>
+          <div class="kpi-change up" id="kpi-o2-ch">↑ Nominal output</div>
+        </div>
+        <div class="kpi-card amber">
+          <div class="kpi-label">ALGAE DENSITY</div>
+          <div class="kpi-value amber" id="kpi-dens">—<span class="kpi-unit">g/L</span></div>
+          <div class="kpi-change flat" id="kpi-dens-ch">→ Exponential phase</div>
+        </div>
+        <div class="kpi-card blue">
+          <div class="kpi-label">EFFICIENCY</div>
+          <div class="kpi-value blue" id="kpi-eff">—<span class="kpi-unit">%</span></div>
+          <div class="kpi-change up" id="kpi-eff-ch">↑ Peak photosynthesis</div>
+        </div>
+      </div>
+
+      <!-- MAIN CHARTS ROW -->
+      <div class="charts-grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">CO₂ Capture Rate</div><div class="card-sub" id="co2-live-val">Loading…</div></div>
+            <div style="font-size:10px;color:var(--accent);font-family:'DM Mono',monospace">● LIVE</div>
+          </div>
+          <div class="card-body" style="padding-bottom:8px">
+            <div class="chart-wrap"><canvas id="chart-co2"></canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">O₂ Production Rate</div><div class="card-sub" id="o2-live-val">Loading…</div></div>
+            <div style="font-size:10px;color:var(--teal);font-family:'DM Mono',monospace">● LIVE</div>
+          </div>
+          <div class="card-body" style="padding-bottom:8px">
+            <div class="chart-wrap"><canvas id="chart-o2"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECONDARY CHARTS -->
+      <div class="charts-grid-3">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Biomass OD₆₈₀</div>
+          </div>
+          <div class="card-body" style="padding-bottom:8px">
+            <div class="chart-wrap" style="height:140px"><canvas id="chart-biomass"></canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">pH Level</div></div>
+          <div class="card-body" style="padding-bottom:8px">
+            <div class="chart-wrap" style="height:140px"><canvas id="chart-ph"></canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Temperature</div></div>
+          <div class="card-body" style="padding-bottom:8px">
+            <div class="chart-wrap" style="height:140px"><canvas id="chart-temp"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECENT ALERTS -->
+      <div class="section-label">Recent Alerts</div>
+      <div class="card">
+        <div class="card-body">
+          <div class="alert-list" id="overview-alerts"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ PAGE: SENSORS ══════════ -->
+    <div class="page" id="page-sensors">
+      <div class="page-header">
+        <div class="page-h-left"><h1>Sensor Array</h1><p>All probes — live readings</p></div>
+        <div class="page-h-right"><button class="btn-outline" onclick="calibrateAll()">Calibrate All</button></div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-header"><div class="card-title">Live Sensor Readings</div><div class="card-sub" id="sensor-last-update">Updated now</div></div>
+        <div class="card-body" style="padding:0">
+          <table class="sensor-table">
+            <thead>
+              <tr>
+                <th>Sensor</th><th>Value</th><th>Unit</th><th>Range</th><th>Status</th><th>Trend</th>
+              </tr>
+            </thead>
+            <tbody id="sensor-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="charts-grid-2">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Turbidity (NTU)</div></div>
+          <div class="card-body" style="padding-bottom:8px"><div class="chart-wrap"><canvas id="chart-turb"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Light Intensity (μmol/m²/s)</div></div>
+          <div class="card-body" style="padding-bottom:8px"><div class="chart-wrap"><canvas id="chart-light"></canvas></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ PAGE: MECHATRONICS ══════════ -->
+    <div class="page" id="page-mechatronics">
+      <div class="page-header">
+        <div class="page-h-left"><h1>Mechatronics</h1><p>Actuators, motors & control systems</p></div>
+        <div class="page-h-right"><button class="btn-outline" onclick="alert('⚠️ Emergency Stop requires physical confirmation. Press and hold the hardware E-STOP button on the unit.')">Emergency Stop</button><button class="btn-primary" onclick="alert('✅ Auto Mode enabled. PID controllers managing pH, temperature, CO₂ flow, and lighting automatically.')">Auto Mode</button></div>
+      </div>
+      <div class="section-label">Actuator Status</div>
+      <div class="mech-grid" id="mech-grid"></div>
+      <div class="section-label">Control Overview</div>
+      <div class="charts-grid-2">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Pump Flow Rate</div></div>
+          <div class="card-body" style="padding-bottom:8px"><div class="chart-wrap"><canvas id="chart-pump"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">LED Duty Cycle (%)</div></div>
+          <div class="card-body" style="padding-bottom:8px"><div class="chart-wrap"><canvas id="chart-led"></canvas></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ PAGE: IMPACT ══════════ -->
+    <div class="page" id="page-impact">
+      <div class="page-header">
+        <div class="page-h-left"><h1>Environmental Impact</h1><p>Real-time CO₂ offset metrics</p></div>
+      </div>
+      <div class="impact-grid" id="impact-grid"></div>
+      <div class="section-label">Comparative Analysis</div>
+      <div class="charts-grid-2">
+        <div class="card">
+          <div class="card-header"><div class="card-title">CO₂ Capture vs. Industrial Sources</div></div>
+          <div class="card-body" style="padding-bottom:8px"><div class="chart-wrap" style="height:220px"><canvas id="chart-impact-bar"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Annual Projection Trend</div></div>
+          <div class="card-body" style="padding-bottom:8px"><div class="chart-wrap" style="height:220px"><canvas id="chart-impact-proj"></canvas></div></div>
+        </div>
+      </div>
+      <div class="section-label">Breakdown</div>
+      <div class="charts-grid-3">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Emission Sources</div></div>
+          <div class="card-body"><div class="chart-wrap" style="height:180px"><canvas id="chart-donut"></canvas></div></div>
+        </div>
+        <div class="card" style="grid-column:span 2">
+          <div class="card-header"><div class="card-title">Cumulative CO₂ Captured (Session)</div></div>
+          <div class="card-body" style="padding-bottom:8px"><div class="chart-wrap" style="height:180px"><canvas id="chart-cumulative"></canvas></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ PAGE: ANALYTICS ══════════ -->
+    <div class="page" id="page-charts">
+      <div class="page-header">
+        <div class="page-h-left"><h1>Analytics</h1><p>Deep-dive sensor history & correlations</p></div>
+        <div class="page-h-right"><button class="btn-outline">1H</button><button class="btn-primary">6H</button><button class="btn-outline">24H</button></div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-header"><div class="card-title">CO₂ / O₂ Correlation</div></div>
+        <div class="card-body" style="padding-bottom:8px"><div class="chart-wrap" style="height:220px"><canvas id="chart-corr"></canvas></div></div>
+      </div>
+      <div class="charts-grid-2">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Nutrient Depletion Rate</div></div>
+          <div class="card-body" style="padding-bottom:8px"><div class="chart-wrap" style="height:160px"><canvas id="chart-nutr"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Photosynthetic Efficiency</div></div>
+          <div class="card-body" style="padding-bottom:8px"><div class="chart-wrap" style="height:160px"><canvas id="chart-eff"></canvas></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ PAGE: 3D ══════════ -->
+    <div class="page" id="page-3d">
+      <div id="viz-layout">
+        <div id="viz-canvas-wrap">
+          <canvas id="viz-canvas"></canvas>
+          <div id="viz-overlay">
+            <div id="viz-title-block">
+              <h2>AlgaeX Liquid Tree — 3D Model</h2>
+              <p>Interactive photobioreactor visualization · Chlorella vulgaris</p>
+            </div>
+            <div id="viz-info-panel">
+              <div class="viz-info-row"><span class="viz-info-label">Species</span><span class="viz-info-val">C. vulgaris</span></div>
+              <div class="viz-info-row"><span class="viz-info-label">Volume</span><span class="viz-info-val">12 L</span></div>
+              <div class="viz-info-row"><span class="viz-info-label">Culture</span><span class="viz-info-val" id="vi-dens">— g/L</span></div>
+              <div class="viz-info-row"><span class="viz-info-label">Temp</span><span class="viz-info-val" id="vi-temp">— °C</span></div>
+              <div class="viz-info-row"><span class="viz-info-label">pH</span><span class="viz-info-val" id="vi-ph">—</span></div>
+              <div class="viz-info-row"><span class="viz-info-label">CO₂ In</span><span class="viz-info-val" id="vi-co2">— kg/hr</span></div>
+            </div>
+            <div id="viz-hint">Drag to rotate · Scroll to zoom · Click components</div>
+            <div id="viz-controls">
+              <button class="viz-btn" onclick="vizReset()">↺ Reset View</button>
+              <button class="viz-btn" id="btn-explode" onclick="vizExplode()">⊞ Explode</button>
+              <button class="viz-btn" id="btn-wire" onclick="vizWire()">⊟ Wireframe</button>
+              <button class="viz-btn" id="btn-flow" onclick="vizFlow()">◎ Flow Mode</button>
+            </div>
+          </div>
+          <div id="viz-component-tooltip"></div>
+        </div>
+        <div id="viz-sidebar">
+          <div class="viz-sidebar-title">Components</div>
+          <div class="viz-sidebar-sub">Click to highlight in model</div>
+          <div class="component-list" id="comp-list"></div>
+          <div class="viz-spec-block">
+            <div class="viz-spec-title">LIQUID3 SPECS</div>
+            <div class="viz-spec-row"><span class="viz-spec-key">Origin</span><span class="viz-spec-val">Belgrade, Serbia</span></div>
+            <div class="viz-spec-row"><span class="viz-spec-key">Volume</span><span class="viz-spec-val">600 L</span></div>
+            <div class="viz-spec-row"><span class="viz-spec-key">Height</span><span class="viz-spec-val">~1.2 m</span></div>
+            <div class="viz-spec-row"><span class="viz-spec-key">Diameter</span><span class="viz-spec-val">~0.9 m</span></div>
+            <div class="viz-spec-row"><span class="viz-spec-key">Species</span><span class="viz-spec-val">C. reinhardtii</span></div>
+            <div class="viz-spec-row"><span class="viz-spec-key">Power</span><span class="viz-spec-val">Solar panel</span></div>
+            <div class="viz-spec-row"><span class="viz-spec-key">CO₂ cap.</span><span class="viz-spec-val">= 2 adult trees</span></div>
+            <div class="viz-spec-row"><span class="viz-spec-key">Green area</span><span class="viz-spec-val">= 200 m² lawn</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ PAGE: AI ══════════ -->
+    <div class="page" id="page-ai" style="padding:0">
+      <div id="ai-layout">
+        <div id="ai-chat-area">
+          <div id="ai-chat-header">
+            <div style="width:32px;height:32px;border-radius:50%;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);display:flex;align-items:center;justify-content:center;font-size:14px">🌿</div>
+            <div>
+              <div style="font-weight:600;font-size:13px">AlgaeX Bio-Core AI</div>
+              <div style="font-size:10px;color:var(--text-muted);font-family:'DM Mono',monospace">Claude-powered · Bioreactor Intelligence</div>
+            </div>
+            <div style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--accent)"><div class="live-dot"></div>Online</div>
+          </div>
+          <div id="ai-chat-messages">
+            <div class="chat-sys">— Session started · AlgaeX Bio-Core v2.1 —</div>
+            <div class="chat-msg ai">
+              <div class="chat-avatar ai">🌿</div>
+              <div class="chat-bubble">Welcome to AlgaeX Bio-Core. I have full access to your reactor's live sensor data. Ask me about CO₂ capture efficiency, algae growth optimization, system anomalies, or environmental impact calculations.</div>
+            </div>
+          </div>
+          <div id="ai-typing" style="display:none;padding:0 20px 8px">
+            <div class="chat-msg ai">
+              <div class="chat-avatar ai">🌿</div>
+              <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+            </div>
+          </div>
+          <div id="ai-input-bar">
+            <input id="ai-input" placeholder="Ask about sensor data, algae biology, system optimization…" />
+            <button id="ai-send" onclick="sendAI()">Send</button>
+          </div>
+        </div>
+        <div id="ai-sidebar">
+          <div class="ai-sidebar-section">
+            <div class="ai-section-title">Live Context</div>
+            <div class="ai-context-card">
+              <div class="ai-ctx-label">CO₂ CAPTURE</div>
+              <div class="ai-ctx-val green" id="ai-ctx-co2">—</div>
+            </div>
+            <div class="ai-context-card">
+              <div class="ai-ctx-label">O₂ PRODUCTION</div>
+              <div class="ai-ctx-val teal" id="ai-ctx-o2">—</div>
+            </div>
+            <div class="ai-context-card">
+              <div class="ai-ctx-label">EFFICIENCY</div>
+              <div class="ai-ctx-val amber" id="ai-ctx-eff">—</div>
+            </div>
+          </div>
+          <div class="ai-sidebar-section">
+            <div class="ai-section-title">Quick Prompts</div>
+            <div class="quick-prompt" onclick="quickSend(this)">Why is my pH drifting above 7.4?</div>
+            <div class="quick-prompt" onclick="quickSend(this)">How many trees does this replace hourly?</div>
+            <div class="quick-prompt" onclick="quickSend(this)">Optimize my light intensity for max growth</div>
+            <div class="quick-prompt" onclick="quickSend(this)">Explain the CO₂ → biomass conversion</div>
+            <div class="quick-prompt" onclick="quickSend(this)">When should I schedule the next harvest?</div>
+            <div class="quick-prompt" onclick="quickSend(this)">What industries emit the most CO₂?</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ PAGE: LOGS ══════════ -->
+    <div class="page" id="page-logs">
+      <div class="page-header">
+        <div class="page-h-left"><h1>System Logs</h1><p>Operational event history</p></div>
+        <div class="page-h-right"><button class="btn-outline" onclick="$('full-log').innerHTML='';$('overview-alerts').innerHTML=''">Clear Logs</button></div>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <div class="alert-list" id="full-log"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /body -->
+
+<script>
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+const S = {
+  co2:1.42, o2:38.4, density:2.8, ph:7.1, temp:24.3,
+  turb:18, light:320, nutr:42.1, eff:78.2, biomass:0.82,
+  pumpA:142, pumpB:0, aerRPM:218, ledDuty:92,
+  co2Session:0, o2Session:0, tick:0,
+  hist:{ co2:[], o2:[], biomass:[], ph:[], temp:[],
+         turb:[], light:[], pump:[], led:[], nutr:[], eff:[], cumCO2:[] },
+  labels:[],
+};
+// Pre-fill 60 points
+for(let i=0;i<60;i++){
+  const t=new Date(Date.now()-(60-i)*1000);
+  S.labels.push(t.toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'}));
+  S.hist.co2.push(1.2+Math.random()*0.5);
+  S.hist.o2.push(35+Math.random()*8);
+  S.hist.biomass.push(0.72+Math.random()*0.2);
+  S.hist.ph.push(7.0+Math.random()*0.3);
+  S.hist.temp.push(24+Math.random()*0.6);
+  S.hist.turb.push(15+Math.random()*6);
+  S.hist.light.push(310+Math.random()*20);
+  S.hist.pump.push(135+Math.random()*15);
+  S.hist.led.push(88+Math.random()*6);
+  S.hist.nutr.push(42+Math.random()*3);
+  S.hist.eff.push(74+Math.random()*8);
+  S.hist.cumCO2.push(i*0.0004);
+}
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const noise=(v,a)=>v+(Math.random()-.5)*a;
+const fmt=(v,d=2)=>v.toFixed(d);
+const $ = id => document.getElementById(id);
+
+// ═══════════════════════════════════════════
+// CLOCK
+// ═══════════════════════════════════════════
+setInterval(()=>{
+  $('clock').textContent=new Date().toLocaleTimeString('en-US',{hour12:false});
+},1000);
+
+// ═══════════════════════════════════════════
+// CHART.JS DEFAULTS
+// ═══════════════════════════════════════════
+Chart.defaults.color='#6b9a7c';
+Chart.defaults.borderColor='#d4e4d8';
+Chart.defaults.font.family="'DM Mono', monospace";
+Chart.defaults.font.size=10;
+
+const chartInstances = {};
+function mkLineChart(id, label, color, data, min, max, fill=true){
+  const ctx = $(id);
+  if(!ctx) return null;
+  if(chartInstances[id]){ chartInstances[id].destroy(); }
+  const ch = new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:[...S.labels],
+      datasets:[{
+        label, data:[...data],
+        borderColor:color, borderWidth:1.5,
+        pointRadius:0, pointHoverRadius:4,
+        tension:0.4,
+        fill: fill ? 'origin' : false,
+        backgroundColor: fill ? color.replace(')',',0.08)').replace('rgb','rgba') : 'transparent',
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, animation:false,
+      interaction:{ intersect:false, mode:'index' },
+      plugins:{ legend:{display:false}, tooltip:{
+        backgroundColor:'rgba(255,255,255,0.97)',
+        borderColor:'#bcd4c2', borderWidth:1,
+        titleColor:'#3d6b4f', bodyColor:'#0f1f14',
+        padding:10, cornerRadius:6,
+      }},
+      scales:{
+        x:{ display:false },
+        y:{ min, max, grid:{ color:'rgba(36,51,40,0.5)', drawBorder:false },
+            ticks:{ maxTicksLimit:4, padding:6 } }
+      }
+    }
+  });
+  chartInstances[id]=ch;
+  return ch;
+}
+
+function mkBarChart(id, labels, datasets){
+  const ctx=$(id); if(!ctx)return;
+  if(chartInstances[id])chartInstances[id].destroy();
+  chartInstances[id]=new Chart(ctx,{
+    type:'bar',
+    data:{labels,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:{duration:500},
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(255,255,255,0.97)',borderColor:'#bcd4c2',borderWidth:1,titleColor:'#3d6b4f',bodyColor:'#0f1f14',padding:10,cornerRadius:6}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#6b9a7c'}},
+        y:{grid:{color:'rgba(212,228,216,0.8)',drawBorder:false},ticks:{maxTicksLimit:4,padding:6}}
+      }
+    }
+  });
+}
+
+function mkDoughnutChart(id,labels,data,colors){
+  const ctx=$(id);if(!ctx)return;
+  if(chartInstances[id])chartInstances[id].destroy();
+  chartInstances[id]=new Chart(ctx,{
+    type:'doughnut',
+    data:{labels,datasets:[{data,backgroundColor:colors,borderColor:'#111916',borderWidth:3}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{color:'#3d6b4f',boxWidth:10,padding:10}},tooltip:{backgroundColor:'rgba(255,255,255,0.97)',borderColor:'#bcd4c2',borderWidth:1,titleColor:'#3d6b4f',bodyColor:'#0f1f14',padding:10,cornerRadius:6}}
+    }
+  });
+}
+
+// ═══════════════════════════════════════════
+// INIT CHARTS
+// ═══════════════════════════════════════════
+function initCharts(){
+  mkLineChart('chart-co2','CO₂ kg/hr','rgb(34,197,94)',S.hist.co2,0.8,2.4);
+  mkLineChart('chart-o2','O₂ L/hr','rgb(45,212,191)',S.hist.o2,28,58);
+  mkLineChart('chart-biomass','OD','rgb(250,204,21)',S.hist.biomass,0.5,1.3);
+  mkLineChart('chart-ph','pH','rgb(245,158,11)',S.hist.ph,6.5,7.9);
+  mkLineChart('chart-temp','°C','rgb(59,130,246)',S.hist.temp,22,27);
+  mkLineChart('chart-turb','NTU','rgb(168,85,247)',S.hist.turb,8,36);
+  mkLineChart('chart-light','μmol','rgb(251,191,36)',S.hist.light,280,440);
+  mkLineChart('chart-pump','RPM','rgb(34,197,94)',S.hist.pump,110,170);
+  mkLineChart('chart-led','%','rgb(251,191,36)',S.hist.led,80,100);
+  mkLineChart('chart-nutr','mg/L','rgb(45,212,191)',S.hist.nutr,35,52);
+  mkLineChart('chart-eff','%','rgb(245,158,11)',S.hist.eff,60,95);
+  mkLineChart('chart-corr','CO₂','rgb(34,197,94)',S.hist.co2,0.8,2.4,false);
+  mkLineChart('chart-cumulative','kg','rgb(34,197,94)',S.hist.cumCO2,0,0.04);
+  initImpactCharts();
+}
+
+function initImpactCharts(){
+  mkBarChart('chart-impact-bar',
+    ['AlgaeX','Avg Car/day','Small Factory','Power Plant (1hr)','Cement Plant (1hr)'],
+    [{data:[S.co2*24,4.6,57.6,700,320],
+      backgroundColor:['rgba(34,197,94,0.7)','rgba(239,68,68,0.5)','rgba(245,158,11,0.5)','rgba(239,68,68,0.7)','rgba(245,158,11,0.7)'],
+      borderRadius:4,borderSkipped:false}]
+  );
+  mkDoughnutChart('chart-donut',
+    ['Transport','Energy','Industry','Agriculture','Other'],
+    [29,26,23,11,11],
+    ['rgba(239,68,68,0.7)','rgba(245,158,11,0.7)','rgba(59,130,246,0.7)','rgba(34,197,94,0.7)','rgba(148,163,184,0.5)']
+  );
+}
+
+// ═══════════════════════════════════════════
+// SENSOR TICK
+// ═══════════════════════════════════════════
+function tick(){
+  S.tick++;
+  S.co2   = clamp(noise(S.co2,0.07)*(1+Math.sin(S.tick/40)*0.04), 0.9,2.2);
+  S.o2    = clamp(noise(S.o2,1.0)*(1+Math.sin(S.tick/35)*0.03), 30,54);
+  S.density = clamp(noise(S.density,0.05), 1.5,4.5);
+  S.ph    = clamp(noise(S.ph,0.03), 6.6,7.7);
+  S.temp  = clamp(noise(S.temp,0.12), 22.5,26.5);
+  S.turb  = clamp(noise(S.turb,1.2), 9,33);
+  S.light = clamp(noise(S.light,6), 260,420);
+  S.nutr  = clamp(noise(S.nutr,0.4), 32,58);
+  S.eff   = clamp(noise(S.eff,1.0), 66,91);
+  S.biomass=clamp(noise(S.biomass,0.012), 0.55,1.35);
+  S.pumpA = clamp(noise(S.pumpA,4), 128,156);
+  S.aerRPM= clamp(noise(S.aerRPM,5), 200,240);
+  S.ledDuty=clamp(noise(S.ledDuty,1.5), 85,98);
+  S.co2Session += S.co2/3600;
+  S.o2Session  += S.o2/3600;
+
+  const now = new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const pushHist=(arr,v,max=60)=>{ arr.push(v); if(arr.length>max)arr.shift(); };
+  pushHist(S.labels,now); pushHist(S.hist.co2,S.co2); pushHist(S.hist.o2,S.o2);
+  pushHist(S.hist.biomass,S.biomass); pushHist(S.hist.ph,S.ph); pushHist(S.hist.temp,S.temp);
+  pushHist(S.hist.turb,S.turb); pushHist(S.hist.light,S.light); pushHist(S.hist.pump,S.pumpA);
+  pushHist(S.hist.led,S.ledDuty); pushHist(S.hist.nutr,S.nutr); pushHist(S.hist.eff,S.eff);
+  pushHist(S.hist.cumCO2, S.co2Session);
+
+  updateCharts();
+  updateUI();
+  updateSensorTable();
+  updateMechGrid();
+  updateImpact();
+  updateAIContext();
+  update3DOverlay();
+  updateHealth();
+}
+
+function updateCharts(){
+  const liveCharts = ['chart-co2','chart-o2','chart-biomass','chart-ph','chart-temp',
+                      'chart-turb','chart-light','chart-pump','chart-led','chart-nutr','chart-eff','chart-cumulative'];
+  const dataMap = {
+    'chart-co2':S.hist.co2,'chart-o2':S.hist.o2,'chart-biomass':S.hist.biomass,
+    'chart-ph':S.hist.ph,'chart-temp':S.hist.temp,'chart-turb':S.hist.turb,
+    'chart-light':S.hist.light,'chart-pump':S.hist.pump,'chart-led':S.hist.led,
+    'chart-nutr':S.hist.nutr,'chart-eff':S.hist.eff,'chart-cumulative':S.hist.cumCO2,
+  };
+  liveCharts.forEach(id=>{
+    const ch=chartInstances[id];
+    if(!ch) return;
+    ch.data.labels=[...S.labels];
+    ch.data.datasets[0].data=[...dataMap[id]];
+    ch.update('none');
+  });
+  // Correlation: update both datasets
+  if(chartInstances['chart-corr']){
+    chartInstances['chart-corr'].data.labels=[...S.labels];
+    chartInstances['chart-corr'].data.datasets[0].data=[...S.hist.co2];
+    chartInstances['chart-corr'].update('none');
+  }
+}
+
+function updateUI(){
+  $('kpi-co2').innerHTML = fmt(S.co2)+'<span class="kpi-unit">kg/hr</span>';
+  $('kpi-o2').innerHTML  = fmt(S.o2,1)+'<span class="kpi-unit">L/hr</span>';
+  $('kpi-dens').innerHTML= fmt(S.density,1)+'<span class="kpi-unit">g/L</span>';
+  $('kpi-eff').innerHTML = fmt(S.eff,1)+'<span class="kpi-unit">%</span>';
+  $('co2-live-val').textContent = `Current: ${fmt(S.co2)} kg/hr · Session: ${fmt(S.co2Session,3)} kg`;
+  $('o2-live-val').textContent  = `Current: ${fmt(S.o2,1)} L/hr · Session: ${fmt(S.o2Session,2)} L`;
+  $('sensor-last-update').textContent = 'Updated '+new Date().toLocaleTimeString('en-US',{hour12:false});
+}
+
+// ═══════════════════════════════════════════
+// SENSOR TABLE
+// ═══════════════════════════════════════════
+const sensorDefs = [
+  {name:'CO₂ Capture Rate',  key:'co2',     unit:'kg/hr',     min:0.9, max:2.2,  ok:[0.9,2.0], col:'green'},
+  {name:'O₂ Production',     key:'o2',      unit:'L/hr',      min:30,  max:54,   ok:[30,52],   col:'teal'},
+  {name:'Algae Density',     key:'density', unit:'g/L',       min:1.5, max:4.5,  ok:[1.5,4.0], col:'amber'},
+  {name:'pH Level',          key:'ph',      unit:'pH',        min:6.6, max:7.7,  ok:[6.8,7.5], col:'amber'},
+  {name:'Temperature',       key:'temp',    unit:'°C',        min:22.5,max:26.5, ok:[23,26],   col:'blue'},
+  {name:'Turbidity',         key:'turb',    unit:'NTU',       min:9,   max:33,   ok:[9,28],    col:'blue'},
+  {name:'Light Intensity',   key:'light',   unit:'μmol/m²/s', min:260, max:420,  ok:[280,410], col:'amber'},
+  {name:'Nutrient (N)',      key:'nutr',    unit:'mg/L',      min:32,  max:58,   ok:[35,55],   col:'teal'},
+  {name:'Efficiency',        key:'eff',     unit:'%',         min:66,  max:91,   ok:[70,91],   col:'green'},
+  {name:'Biomass OD₆₈₀',    key:'biomass', unit:'OD',        min:0.55,max:1.35, ok:[0.6,1.3], col:'amber'},
+];
+function updateSensorTable(){
+  const tb=$('sensor-tbody'); if(!tb)return;
+  tb.innerHTML=sensorDefs.map(d=>{
+    const v=S[d.key]; const pct=(v-d.min)/(d.max-d.min)*100;
+    const inRange=v>=d.ok[0]&&v<=d.ok[1];
+    const st=inRange?'ok':'warn';
+    const stLabel=inRange?'Normal':'Warning';
+    const trend=S.hist[d.key]?.length>2?(S.hist[d.key].at(-1)>S.hist[d.key].at(-3)?'↑':'↓'):'→';
+    const trendCls=trend==='↑'?'up':trend==='↓'?'down':'flat';
+    return `<tr>
+      <td class="sensor-name">${d.name}</td>
+      <td class="sensor-val-cell">${fmt(v,d.key==='turb'?0:2)}</td>
+      <td class="sensor-unit-cell">${d.unit}</td>
+      <td><span class="mini-bar"><span class="mini-fill" style="width:${Math.min(pct,100)}%;background:var(--${d.col==='green'?'accent':d.col==='teal'?'teal':d.col==='amber'?'amber':'sky'})"></span></span></td>
+      <td><span class="status-chip ${st}">${stLabel}</span></td>
+      <td class="${trendCls}" style="font-family:'DM Mono',monospace;font-size:12px">${trend}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// MECHATRONICS
+// ═══════════════════════════════════════════
+const mechDefs = [
+  {icon:'⚙️', name:'Peristaltic Pump A', sub:'Media circulation', key:'pumpA', unit:'RPM', status:'ok'},
+  {icon:'🔧', name:'Peristaltic Pump B', sub:'Nutrient dosing', key:'pumpB', unit:'RPM', status:'warn'},
+  {icon:'💨', name:'CO₂ Solenoid Valve', sub:'Gas injection PWM', valStatic:'78%', status:'ok'},
+  {icon:'🌀', name:'Aerator Module', sub:'O₂ degassing', key:'aerRPM', unit:'RPM', status:'ok'},
+  {icon:'💡', name:'LED Array (×4)', sub:'660nm + 450nm grow', key:'ledDuty', unit:'%', status:'ok'},
+  {icon:'🌡️', name:'Peltier TEC', sub:'Temperature control', valStatic:'±0.2°C', status:'ok'},
+  {icon:'⚗️', name:'pH Dosing Servo', sub:'NaOH/HCl auto-inject', valStatic:'PID ON', status:'ok'},
+  {icon:'🔄', name:'Harvest Centrifuge', sub:'Biomass separation', valStatic:'IDLE', status:'warn'},
+];
+function updateMechGrid(){
+  const g=$('mech-grid'); if(!g)return;
+  g.innerHTML=mechDefs.map(m=>{
+    const v=m.key?fmt(S[m.key],0)+' '+m.unit:m.valStatic;
+    return `<div class="mech-card">
+      <div class="mech-icon-wrap">${m.icon}</div>
+      <div class="mech-info">
+        <div class="mech-name">${m.name}</div>
+        <div class="mech-sub">${m.sub}</div>
+      </div>
+      <div class="mech-right">
+        <div class="mech-val">${v}</div>
+        <div class="status-chip ${m.status}" style="margin-top:4px">${m.status==='ok'?'Running':'Standby'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// IMPACT
+// ═══════════════════════════════════════════
+const impactDefs = [
+  {emoji:'🌳', labelFn:()=>((S.co2/0.021)|0)+'', unit:'Trees / hr', sub:'Avg tree absorbs 21g CO₂/hr', col:'var(--accent3)', progFn:()=>Math.min(S.co2/0.021/120*100,100)},
+  {emoji:'🏭', labelFn:()=>(S.co2/2.4*100).toFixed(1)+'%', unit:'Factory offset', sub:'Avg small factory: 2.4 kg/hr', col:'var(--teal)', progFn:()=>Math.min(S.co2/2.4*100,100)},
+  {emoji:'🌍', labelFn:()=>(S.co2*8760/1000).toFixed(2)+'t', unit:'Annual projection', sub:'At current capture rate', col:'var(--amber)', progFn:()=>Math.min(S.co2*8760/1000/2*100,100)},
+  {emoji:'⚡', labelFn:()=>((S.o2*0.0023*1000)|0)+'W', unit:'Energy equivalent', sub:'vs. electrolysis energy', col:'var(--sky)', progFn:()=>Math.min(S.o2*0.0023*10,100)},
+  {emoji:'🚗', labelFn:()=>(S.co2/0.404).toFixed(1), unit:'Cars removed / day', sub:'Avg car: 0.404 kg CO₂/hr', col:'#fb923c', progFn:()=>Math.min(S.co2/0.404/6*100,100)},
+];
+function updateImpact(){
+  const g=$('impact-grid'); if(!g)return;
+  g.innerHTML=impactDefs.map(d=>`
+    <div class="impact-card">
+      <div class="impact-emoji">${d.emoji}</div>
+      <div class="impact-num" style="color:${d.col}">${d.labelFn()}</div>
+      <div class="impact-label">${d.unit}</div>
+      <div class="impact-sub">${d.sub}</div>
+      <div class="impact-track"><div class="impact-prog" style="width:${d.progFn()}%;background:${d.col}"></div></div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// ALERTS
+// ═══════════════════════════════════════════
+const alertPool=[
+  {type:'ok',  msg:'CO₂ capture rate stable at optimal threshold.'},
+  {type:'ok',  msg:'Photosynthetic cycle Phase II — biomass accumulation confirmed.'},
+  {type:'warn',msg:'pH deviation detected — auto-dosing servo correcting.'},
+  {type:'ok',  msg:'Pump A flow rate synchronized. Circulation nominal.'},
+  {type:'ok',  msg:'LED array duty cycle auto-adjusted for peak PAR output.'},
+  {type:'warn',msg:'Turbidity spike — monitoring culture clarity.'},
+  {type:'ok',  msg:'Biomass density crossing 2.8 g/L milestone.'},
+  {type:'warn',msg:'Nutrient depletion forecast in 1h 48m — schedule dosing.'},
+  {type:'info',msg:'O₂ vent valve pressure nominal. Harvest window in ~18h.'},
+  {type:'ok',  msg:'Temperature regulation PID stable at 24.3°C (±0.2°C).'},
+  {type:'warn',msg:'CO₂ inlet flow micro-fluctuation — self-corrected.'},
+  {type:'ok',  msg:'Efficiency peak reached — light spectrum optimal.'},
+];
+let alertIdx=0, allLogs=[];
+function addAlert(){
+  const a=alertPool[alertIdx%alertPool.length]; alertIdx++;
+  const t=new Date().toLocaleTimeString('en-US',{hour12:false});
+  allLogs.unshift({...a, time:t});
+  if(allLogs.length>40)allLogs.pop();
+
+  const el=`<div class="alert-row ${a.type}">
+    <div class="alert-dot ${a.type}"></div>
+    <div class="alert-text">${a.msg}</div>
+    <div class="alert-time">${t}</div>
+  </div>`;
+
+  // overview
+  const oa=$('overview-alerts');
+  if(oa){ oa.insertAdjacentHTML('afterbegin',el); if(oa.children.length>5)oa.lastChild.remove(); }
+
+  // full log
+  const fl=$('full-log');
+  if(fl){ fl.insertAdjacentHTML('afterbegin',el); if(fl.children.length>30)fl.lastChild.remove(); }
+}
+addAlert();
+setInterval(addAlert, 4500+Math.random()*2000);
+
+// ═══════════════════════════════════════════
+// AI CONTEXT
+// ═══════════════════════════════════════════
+function updateAIContext(){
+  const c1=$('ai-ctx-co2'); if(c1)c1.textContent=fmt(S.co2)+' kg/hr';
+  const c2=$('ai-ctx-o2');  if(c2)c2.textContent=fmt(S.o2,1)+' L/hr';
+  const c3=$('ai-ctx-eff'); if(c3)c3.textContent=fmt(S.eff,1)+'%';
+}
+
+// ═══════════════════════════════════════════
+// SYSTEM HEALTH SIDEBAR
+// ═══════════════════════════════════════════
+function updateHealth(){
+  const cpu=clamp(noise(34,3),20,55);
+  const mem=clamp(noise(58,2),45,72);
+  const stor=21;
+  $('h-cpu').style.width=cpu+'%'; $('h-cpu-v').textContent=cpu.toFixed(0)+'%';
+  $('h-mem').style.width=mem+'%'; $('h-mem-v').textContent=mem.toFixed(0)+'%';
+  $('h-stor').style.width=stor+'%'; $('h-stor-v').textContent=stor+'%';
+}
+
+// ═══════════════════════════════════════════
+// 3D OVERLAY UPDATE
+// ═══════════════════════════════════════════
+function update3DOverlay(){
+  const a=$('vi-dens'); if(a)a.textContent=fmt(S.density,1)+' g/L';
+  const b=$('vi-temp'); if(b)b.textContent=fmt(S.temp,1)+' °C';
+  const c=$('vi-ph');   if(c)c.textContent=fmt(S.ph,1);
+  const d=$('vi-co2');  if(d)d.textContent=fmt(S.co2)+' kg/hr';
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+function navTo(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  $('page-'+page)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.getAttribute('onclick')?.includes("'"+page+"'"))n.classList.add('active');
+  });
+  if(page==='3d' && !vizInited) initViz();
+  if(page==='impact') { setTimeout(initImpactCharts,100); }
+}
+
+// ═══════════════════════════════════════════
+// 3D THREE.JS BIOREACTOR
+// ═══════════════════════════════════════════
+let vizInited=false, vizScene,vizCamera,vizRenderer,vizGroup;
+let vizRotX=0.3,vizRotY=0,vizTgtX=0.3,vizTgtY=0;
+let vizMouseDown=false,vizLastMouse={x:0,y:0};
+let vizExploded=false,vizWired=false,vizFlowing=false;
+let vizBubbleT=0,vizSelectedComp=null;
+const vizComponents=[];
+
+const compDefs=[
+  {name:'Culture Vessel',    desc:'12L flat-panel body', color:0x22c55e, status:'ok'},
+  {name:'LED Grow Strips',   desc:'660nm + 450nm rings', color:0x3b82f6, status:'ok'},
+  {name:'Aerator Tube',      desc:'Bubble diffuser',     color:0x94a3b8, status:'ok'},
+  {name:'CO₂ Inlet',         desc:'Solenoid-regulated',  color:0xf59e0b, status:'ok'},
+  {name:'O₂ Outlet Valve',   desc:'Auto-vent 0.2 bar',   color:0x38bdf8, status:'ok'},
+  {name:'pH Probe',          desc:'Inline digital',      color:0xfbbf24, status:'ok'},
+  {name:'Peristaltic Pump',  desc:'Media circulation',   color:0x475569, status:'ok'},
+  {name:'Algae Culture',     desc:'Chlorella vulgaris',  color:0x4ade80, status:'ok'},
+];
+
+function initViz(){
+  vizInited=true;
+  const canvas=$('viz-canvas');
+  const wrap=$('viz-canvas-wrap');
+  vizRenderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  vizRenderer.setPixelRatio(window.devicePixelRatio);
+  vizRenderer.shadowMap.enabled=true;
+  vizRenderer.setSize(wrap.offsetWidth,wrap.offsetHeight);
+
+  vizScene=new THREE.Scene();
+  vizCamera=new THREE.PerspectiveCamera(46,wrap.offsetWidth/wrap.offsetHeight,0.1,200);
+  vizCamera.position.set(0,1.5,9);
+
+  // ── LIGHTING ──
+  vizScene.add(new THREE.AmbientLight(0xd4f0d8,1.2));
+  const dl=new THREE.DirectionalLight(0xffffff,1.6); dl.position.set(8,12,8); dl.castShadow=true; vizScene.add(dl);
+  const pl1=new THREE.PointLight(0x22c55e,3,20); pl1.position.set(0,1,2); vizScene.add(pl1);  // glow from tank
+  const pl2=new THREE.PointLight(0x86efac,2,15); pl2.position.set(-3,3,3); vizScene.add(pl2);
+  const pl3=new THREE.PointLight(0xfbbf24,1,10); pl3.position.set(0,5.5,0); vizScene.add(pl3); // solar warm
+
+  vizGroup=new THREE.Group();
+  vizScene.add(vizGroup);
+
+  // ════════════════════════════════════════
+  // LIQUID3 — Real Serbian design
+  // Tall transparent cylinder, ~4ft high 3ft wide
+  // Solar canopy on top, integrated bench base, glowing green algae
+  // ════════════════════════════════════════
+
+  // ── 1. MAIN CYLINDRICAL TANK (transparent plexiglass) ──
+  const tankR=1.1, tankH=3.8;
+  const tankGeo=new THREE.CylinderGeometry(tankR,tankR,tankH,48,1,true);
+  const tankMat=new THREE.MeshPhysicalMaterial({
+    color:0x90e8a8, transparent:true, opacity:0.22,
+    roughness:0.02, metalness:0.0, side:THREE.DoubleSide,
+    envMapIntensity:0.5,
+  });
+  const tank=new THREE.Mesh(tankGeo,tankMat);
+  tank.userData={orig:new THREE.Vector3(0,0,0),compIdx:0};
+  tank.castShadow=true; tank.receiveShadow=true;
+  vizGroup.add(tank); vizComponents.push(tank);
+
+  // ── 2. TANK TOP CAP ──
+  const capGeo=new THREE.CylinderGeometry(tankR,tankR,0.08,48);
+  const capMat=new THREE.MeshPhysicalMaterial({color:0x334155,metalness:0.9,roughness:0.2});
+  const topCap=new THREE.Mesh(capGeo,capMat);
+  topCap.position.y=tankH/2; topCap.userData={orig:topCap.position.clone(),compIdx:0};
+  vizGroup.add(topCap);
+
+  // ── 3. TANK BOTTOM CAP ──
+  const botCap=new THREE.Mesh(capGeo,capMat);
+  botCap.position.y=-tankH/2; botCap.userData={orig:botCap.position.clone(),compIdx:0};
+  vizGroup.add(botCap);
+
+  // ── 4. GLOWING ALGAE VOLUME (inner liquid fill) ──
+  const algaeGeo=new THREE.CylinderGeometry(tankR-0.06,tankR-0.06,tankH-0.12,48,1,false);
+  const algaeMat=new THREE.MeshPhysicalMaterial({
+    color:0x16a34a, transparent:true, opacity:0.55,
+    roughness:0.1, metalness:0.0, side:THREE.FrontSide,
+    emissive:0x0d7c2a, emissiveIntensity:0.6,
+  });
+  const algaeVol=new THREE.Mesh(algaeGeo,algaeMat);
+  algaeVol.userData={orig:new THREE.Vector3(0,0,0),compIdx:7,isAlgae:true};
+  vizGroup.add(algaeVol); vizComponents.push(algaeVol);
+
+  // ── 5. FLOATING ALGAE PARTICLES ──
+  const pGeo=new THREE.BufferGeometry();
+  const pos=[];
+  for(let i=0;i<600;i++){
+    const r=(Math.random()*0.85)*tankR;
+    const a=Math.random()*Math.PI*2;
+    pos.push(r*Math.cos(a),(Math.random()-0.5)*tankH*0.92,r*Math.sin(a));
+  }
+  pGeo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  const pMat=new THREE.PointsMaterial({color:0x4ade80,size:0.045,transparent:true,opacity:0.85,sizeAttenuation:true});
+  const pts=new THREE.Points(pGeo,pMat);
+  pts.userData={orig:new THREE.Vector3(0,0,0),isParticles:true,compIdx:7};
+  vizGroup.add(pts); vizComponents.push(pts);
+
+  // ── 6. SOLAR PANEL CANOPY (crown on top) ──
+  // Main horizontal solar panel
+  const solarGeo=new THREE.BoxGeometry(3.2,0.08,3.2);
+  const solarMat=new THREE.MeshPhysicalMaterial({color:0x1e3a5f,metalness:0.6,roughness:0.3,
+    transparent:true,opacity:0.92});
+  const solarPanel=new THREE.Mesh(solarGeo,solarMat);
+  solarPanel.position.y=tankH/2+0.7;
+  solarPanel.userData={orig:solarPanel.position.clone(),compIdx:5};
+  vizGroup.add(solarPanel); vizComponents.push(solarPanel);
+
+  // Solar panel grid lines
+  const solarEdges=new THREE.EdgesGeometry(solarGeo);
+  const solarEdgeMat=new THREE.LineBasicMaterial({color:0x60a5fa,transparent:true,opacity:0.5});
+  const solarEdgeLines=new THREE.LineSegments(solarEdges,solarEdgeMat);
+  solarEdgeLines.position.copy(solarPanel.position);
+  vizGroup.add(solarEdgeLines);
+
+  // Solar panel cells (3x3 grid lines)
+  for(let row=0;row<3;row++){
+    for(let col=0;col<3;col++){
+      const cellGeo=new THREE.PlaneGeometry(0.95,0.95);
+      const cellMat=new THREE.MeshBasicMaterial({color:0x1d4ed8,transparent:true,opacity:0.6,side:THREE.DoubleSide});
+      const cell=new THREE.Mesh(cellGeo,cellMat);
+      cell.rotation.x=-Math.PI/2;
+      cell.position.set(-0.95+col*0.97,tankH/2+0.72,-0.95+row*0.97);
+      vizGroup.add(cell);
+    }
+  }
+
+  // Canopy support pole (center)
+  const poleGeo=new THREE.CylinderGeometry(0.06,0.06,0.7,12);
+  const poleMat=new THREE.MeshPhysicalMaterial({color:0x475569,metalness:0.9,roughness:0.2});
+  const pole=new THREE.Mesh(poleGeo,poleMat);
+  pole.position.y=tankH/2+0.35; pole.userData={orig:pole.position.clone()};
+  vizGroup.add(pole);
+
+  // ── 7. BENCH / BASE STRUCTURE ──
+  // Wide base platform
+  const baseGeo=new THREE.BoxGeometry(4.8,0.18,1.4);
+  const baseMat=new THREE.MeshPhysicalMaterial({color:0x64748b,metalness:0.5,roughness:0.5});
+  const base=new THREE.Mesh(baseGeo,baseMat);
+  base.position.y=-tankH/2-0.09;
+  base.userData={orig:base.position.clone(),compIdx:6};
+  base.castShadow=true; base.receiveShadow=true;
+  vizGroup.add(base); vizComponents.push(base);
+
+  // Left bench seat
+  const seatGeo=new THREE.BoxGeometry(1.5,0.12,1.2);
+  const seatMat=new THREE.MeshPhysicalMaterial({color:0x78716c,metalness:0.2,roughness:0.7});
+  const seatL=new THREE.Mesh(seatGeo,seatMat);
+  seatL.position.set(-1.75,-tankH/2+0.06,0);
+  seatL.userData={orig:seatL.position.clone(),compIdx:6};
+  seatL.castShadow=true;
+  vizGroup.add(seatL);
+
+  // Right bench seat
+  const seatR=new THREE.Mesh(seatGeo,seatMat);
+  seatR.position.set(1.75,-tankH/2+0.06,0);
+  seatR.userData={orig:seatR.position.clone(),compIdx:6};
+  vizGroup.add(seatR);
+
+  // Bench legs
+  const legGeo=new THREE.BoxGeometry(0.12,0.5,0.12);
+  const legMat=new THREE.MeshPhysicalMaterial({color:0x475569,metalness:0.8,roughness:0.3});
+  [[-2.3,-1.2],[-1.2,-1.2],[-2.3,1.2],[-1.2,1.2],[1.2,-1.2],[2.3,-1.2],[1.2,1.2],[2.3,1.2]].forEach(([x,z])=>{
+    const leg=new THREE.Mesh(legGeo,legMat);
+    leg.position.set(x,-tankH/2-0.25,z*0.5);
+    vizGroup.add(leg);
+  });
+
+  // ── 8. METAL SUPPORT FRAME AROUND TANK ──
+  const frameTubeGeo=new THREE.CylinderGeometry(0.035,0.035,tankH+0.3,8);
+  const frameMat=new THREE.MeshPhysicalMaterial({color:0x94a3b8,metalness:0.9,roughness:0.15});
+  [0,1,2,3].forEach(i=>{
+    const ang=i*Math.PI/2+Math.PI/4;
+    const bar=new THREE.Mesh(frameTubeGeo,frameMat);
+    bar.position.set(Math.cos(ang)*(tankR+0.12),0,Math.sin(ang)*(tankR+0.12));
+    bar.userData={orig:bar.position.clone()};
+    vizGroup.add(bar);
+  });
+
+  // Horizontal hoop rings (3 rings around exterior)
+  for(let h=0;h<3;h++){
+    const hoopGeo=new THREE.TorusGeometry(tankR+0.12,0.03,8,48);
+    const hoop=new THREE.Mesh(hoopGeo,frameMat);
+    hoop.position.y=-tankH/2+0.6+(h*1.2);
+    hoop.userData={orig:hoop.position.clone(),compIdx:1};
+    hoop.rotation.x=Math.PI/2; // make horizontal
+    vizGroup.add(hoop); vizComponents.push(hoop);
+  }
+
+  // ── 9. AIR PUMP + CO2 INLET (bottom) ──
+  const pumpBoxGeo=new THREE.BoxGeometry(0.7,0.42,0.6);
+  const pumpBoxMat=new THREE.MeshPhysicalMaterial({color:0x1e293b,metalness:0.7,roughness:0.4});
+  const pumpBox=new THREE.Mesh(pumpBoxGeo,pumpBoxMat);
+  pumpBox.position.set(0,-tankH/2-0.3,0);
+  pumpBox.userData={orig:pumpBox.position.clone(),compIdx:2};
+  vizGroup.add(pumpBox); vizComponents.push(pumpBox);
+
+  // Air inlet tubes
+  const inletGeo=new THREE.CylinderGeometry(0.04,0.04,0.6,10);
+  const inletMat=new THREE.MeshPhysicalMaterial({color:0xf59e0b,metalness:0.6,roughness:0.3});
+  const inlet=new THREE.Mesh(inletGeo,inletMat);
+  inlet.position.set(-0.5,-tankH/2-0.09,0);
+  inlet.userData={orig:inlet.position.clone(),compIdx:3};
+  vizGroup.add(inlet); vizComponents.push(inlet);
+
+  // O2 outlet
+  const outletMat=new THREE.MeshPhysicalMaterial({color:0x38bdf8,metalness:0.6,roughness:0.3});
+  const outlet=new THREE.Mesh(inletGeo,outletMat);
+  outlet.position.set(0.5,-tankH/2-0.09,0);
+  outlet.userData={orig:outlet.position.clone(),compIdx:4};
+  vizGroup.add(outlet); vizComponents.push(outlet);
+
+  // ── 10. USB CHARGING PORTS + INDICATOR LED on bench ──
+  const usbGeo=new THREE.BoxGeometry(0.12,0.06,0.06);
+  const usbMat=new THREE.MeshPhysicalMaterial({color:0x1d4ed8,metalness:0.8,roughness:0.3});
+  [-1.4,-1.6,-1.8].forEach(x=>{
+    const usb=new THREE.Mesh(usbGeo,usbMat);
+    usb.position.set(x,-tankH/2+0.14,0.55);
+    vizGroup.add(usb);
+  });
+
+  // Glowing status LED
+  const ledDotGeo=new THREE.SphereGeometry(0.06,12,12);
+  const ledMat=new THREE.MeshBasicMaterial({color:0x4ade80});
+  const ledDot=new THREE.Mesh(ledDotGeo,ledMat);
+  ledDot.position.set(-tankR-0.18,-0.3,0);
+  ledDot.userData={isLED:true};
+  vizGroup.add(ledDot);
+
+  // ── 11. NIGHT GLOW RING (LED strip at base of tank) ──
+  const glowRingGeo=new THREE.TorusGeometry(tankR+0.02,0.05,8,48);
+  const glowRingMat=new THREE.MeshBasicMaterial({color:0x4ade80,transparent:true,opacity:0.9});
+  const glowRing=new THREE.Mesh(glowRingGeo,glowRingMat);
+  glowRing.rotation.x=Math.PI/2;
+  glowRing.position.y=-tankH/2+0.1;
+  glowRing.userData={isGlowRing:true};
+  vizGroup.add(glowRing);
+
+  // ── 12. BUBBLE STREAM (flow mode) ──
+  const bGeo=new THREE.BufferGeometry();
+  const bPos=[];
+  for(let i=0;i<120;i++){
+    const r=Math.random()*0.7*tankR;
+    const a=Math.random()*Math.PI*2;
+    bPos.push(r*Math.cos(a),(Math.random()-0.5)*tankH,r*Math.sin(a));
+  }
+  bGeo.setAttribute('position',new THREE.Float32BufferAttribute(bPos,3));
+  const bMat=new THREE.PointsMaterial({color:0xe0f2fe,size:0.06,transparent:true,opacity:0});
+  const bubbles=new THREE.Points(bGeo,bMat);
+  bubbles.userData={isBubbles:true};
+  vizGroup.add(bubbles);
+
+  // ── GROUND PLANE ──
+  const groundGeo=new THREE.PlaneGeometry(18,18);
+  const groundMat=new THREE.MeshStandardMaterial({color:0xc8dfc8,roughness:0.9});
+  const ground=new THREE.Mesh(groundGeo,groundMat);
+  ground.rotation.x=-Math.PI/2; ground.position.y=-tankH/2-0.47; ground.receiveShadow=true;
+  vizScene.add(ground);
+
+  // Pavement tiles
+  for(let tx=-3;tx<=3;tx++) for(let ty=-3;ty<=3;ty++){
+    const tGeo=new THREE.PlaneGeometry(1.15,1.15);
+    const tMat=new THREE.MeshStandardMaterial({color:(tx+ty)%2===0?0xdde8dd:0xd0ddd0,roughness:0.8});
+    const tile=new THREE.Mesh(tGeo,tMat);
+    tile.rotation.x=-Math.PI/2; tile.position.set(tx*1.2,-tankH/2-0.46,ty*1.2);
+    tile.receiveShadow=true; vizScene.add(tile);
+  }
+
+  // ── COMPONENT LIST SIDEBAR ──
+  const cl=$('comp-list'); if(cl){
+    cl.innerHTML=compDefs.map((c,i)=>`
+      <div class="comp-item" id="compitem-${i}" onclick="selectComp(${i})">
+        <div class="comp-dot" style="background:${'#'+c.color.toString(16).padStart(6,'0')}"></div>
+        <div><div class="comp-name">${c.name}</div><div class="comp-desc">${c.desc}</div></div>
+        <div class="comp-status ok">●</div>
+      </div>`).join('');
+  }
+
+  // ── EVENTS ──
+  canvas.addEventListener('mousedown',e=>{vizMouseDown=true;vizLastMouse={x:e.clientX,y:e.clientY};});
+  window.addEventListener('mouseup',()=>vizMouseDown=false);
+  window.addEventListener('mousemove',e=>{
+    if(!vizMouseDown)return;
+    vizTgtY+=(e.clientX-vizLastMouse.x)*0.008;
+    vizTgtX+=(e.clientY-vizLastMouse.y)*0.008;
+    vizTgtX=Math.max(-Math.PI/2,Math.min(Math.PI/2,vizTgtX));
+    vizLastMouse={x:e.clientX,y:e.clientY};
+  });
+  canvas.addEventListener('wheel',e=>{
+    vizCamera.position.z=Math.max(3.5,Math.min(16,vizCamera.position.z+e.deltaY*0.01));
+    e.preventDefault();
+  },{passive:false});
+  let lt=null;
+  canvas.addEventListener('touchstart',e=>{lt={x:e.touches[0].clientX,y:e.touches[0].clientY};});
+  canvas.addEventListener('touchmove',e=>{
+    if(!lt)return;
+    vizTgtY+=(e.touches[0].clientX-lt.x)*0.01;
+    vizTgtX+=(e.touches[0].clientY-lt.y)*0.01;
+    lt={x:e.touches[0].clientX,y:e.touches[0].clientY};
+    e.preventDefault();
+  },{passive:false});
+
+  animViz();
+}
+
+function selectComp(i){
+  document.querySelectorAll('.comp-item').forEach((el,j)=>el.classList.toggle('selected',j===i));
+  vizSelectedComp=i;
+}
+function vizReset(){ vizTgtX=0.3; vizTgtY=0; vizCamera.position.z=8; }
+function vizExplode(){
+  vizExploded=!vizExploded;
+  const btn=$('btn-explode'); if(btn)btn.classList.toggle('active',vizExploded);
+  const dirs=[
+    new THREE.Vector3(0,0,0), new THREE.Vector3(0,2.5,2),
+    new THREE.Vector3(2,0,0), new THREE.Vector3(-2.5,0,0),
+    new THREE.Vector3(2.5,0,0), new THREE.Vector3(-2,1.5,0),
+    new THREE.Vector3(0,-3,0), new THREE.Vector3(0,0,0),
+  ];
+  vizGroup.children.forEach(c=>{
+    if(c.userData.orig && c.userData.compIdx!==undefined){
+      const d=dirs[c.userData.compIdx]||new THREE.Vector3();
+      if(vizExploded) c.position.copy(c.userData.orig).addScaledVector(d,1);
+      else c.position.copy(c.userData.orig);
+    }
+  });
+}
+function vizWire(){
+  vizWired=!vizWired;
+  const btn=$('btn-wire'); if(btn)btn.classList.toggle('active',vizWired);
+  vizGroup.children.forEach(c=>{ if(c.material&&c.material.wireframe!==undefined)c.material.wireframe=vizWired; });
+}
+function vizFlow(){
+  vizFlowing=!vizFlowing;
+  const btn=$('btn-flow'); if(btn)btn.classList.toggle('active',vizFlowing);
+  vizGroup.children.forEach(c=>{ if(c.userData.isBubbles) c.material.opacity=vizFlowing?0.7:0; });
+}
+
+function animViz(){
+  requestAnimationFrame(animViz);
+  vizBubbleT+=0.016;
+  vizRotX+=(vizTgtX-vizRotX)*0.07;
+  vizRotY+=(vizTgtY-vizRotY)*0.07;
+  vizGroup.rotation.x=vizRotX;
+  vizGroup.rotation.y=vizRotY;
+
+  vizGroup.children.forEach(c=>{
+    // Animate algae particles (slow swirling rise)
+    if(c.userData.isParticles){
+      const p=c.geometry.attributes.position;
+      for(let i=0;i<p.count;i++){
+        let y=p.getY(i)+Math.sin(vizBubbleT*0.8+i*0.4)*0.003;
+        p.setY(i,y);
+      }
+      p.needsUpdate=true;
+      c.material.opacity=0.7+Math.sin(vizBubbleT*0.5)*0.15;
+    }
+    // Pulse algae volume glow
+    if(c.userData.isAlgae){
+      c.material.emissiveIntensity=0.5+Math.sin(vizBubbleT*0.6)*0.2;
+    }
+    // Glow ring pulse
+    if(c.userData.isGlowRing){
+      c.material.opacity=0.6+Math.sin(vizBubbleT*1.2)*0.35;
+      const h=(vizBubbleT*0.04)%1;
+      c.material.color.setHSL(0.35-h*0.05,1,0.55+Math.sin(vizBubbleT)*0.1);
+    }
+    // LED status dot blink
+    if(c.userData.isLED){
+      c.material.color.setHSL(0.35,1,0.4+Math.sin(vizBubbleT*2)*0.3);
+    }
+    // Bubble flow
+    if(c.userData.isBubbles&&vizFlowing){
+      const p=c.geometry.attributes.position;
+      for(let i=0;i<p.count;i++){
+        let y=p.getY(i)+0.025+Math.sin(i)*0.005;
+        if(y>1.8) y=-1.8;
+        p.setY(i,y);
+      }
+      p.needsUpdate=true;
+    }
+  });
+
+  vizRenderer.render(vizScene,vizCamera);
+}
+
+// ═══════════════════════════════════════════
+// AI CHAT
+// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
+// AI CHAT — Smart built-in bio-intelligence
+// ═══════════════════════════════════════════
+const aiBrain = [
+  { keys:['tree','trees','equivalent','replac'],
+    ans:()=>`Based on current CO₂ capture of ${fmt(S.co2)} kg/hr, this AlgaeX reactor is equivalent to approximately ${((S.co2/0.021)|0)} trees per hour. Over a full day that's ${((S.co2/0.021*24)|0)} tree-equivalents — and unlike trees, this unit operates year-round, even in winter. The original LIQUID3 in Belgrade replaces 2 adult trees or 200m² of lawn.` },
+  { keys:['ph','acid','base','alkali','drift'],
+    ans:()=>`Current pH is ${fmt(S.ph,1)}. The optimal range for Chlorella vulgaris is 6.8–7.4. ${S.ph>7.3?'pH is trending slightly alkaline — this is normal during active photosynthesis as CO₂ is consumed. The PID dosing servo will auto-correct with a micro-dose of HCl.':'pH is within target range. No intervention needed.'}` },
+  { keys:['co2','carbon','capture','absorb'],
+    ans:()=>`Live CO₂ capture rate is ${fmt(S.co2)} kg/hr. Session total: ${fmt(S.co2Session,3)} kg. At this rate the annual projection is ${(S.co2*8760/1000).toFixed(2)} tonnes/year. This is roughly ${(S.co2/2.4*100).toFixed(0)}% of a small factory's hourly emission — remarkable for a 600L unit on a sidewalk.` },
+  { keys:['o2','oxygen','produc'],
+    ans:()=>`O₂ production is at ${fmt(S.o2,1)} L/hr. This is directly proportional to photosynthesis rate — every CO₂ molecule fixed produces one O₂ molecule. At this rate, the reactor produces enough oxygen for approximately ${(S.o2/0.84).toFixed(1)} adult humans per hour.` },
+  { keys:['temp','temperature','heat','cold'],
+    ans:()=>`Reactor temperature is ${fmt(S.temp,1)}°C — within the optimal 22–26°C window for Chlorella growth. The Peltier TEC module is maintaining ±0.2°C stability. Microalgae selected for LIQUID3 can tolerate 5–35°C, giving it year-round outdoor capability unlike conventional trees.` },
+  { keys:['light','led','intensity','par','photon'],
+    ans:()=>`Light intensity is ${S.light.toFixed(0)} μmol/m²/s. The LED array uses 660nm (red, photosynthesis peak) and 450nm (blue, chlorophyll absorption). Current photosynthetic efficiency is ${fmt(S.eff,1)}%. Efficiency above 75% indicates the culture is in exponential growth phase.` },
+  { keys:['harvest','biomass','collect','fertilizer'],
+    ans:()=>`Current biomass OD₆₈₀ is ${fmt(S.biomass,3)}. Harvest threshold is typically OD > 1.2. ${S.biomass>1.0?'Culture is approaching harvest-ready density. Recommend initiating centrifuge harvest within 12–18 hours.':'Culture is in active growth phase. Harvest window estimated in 24–36 hours.'} Harvested biomass is processed into organic fertilizer — a second revenue stream for urban deployments.` },
+  { keys:['industry','factory','pollut','emission','car','vehicle','transport'],
+    ans:()=>`This reactor captures ${fmt(S.co2)} kg CO₂/hr. For comparison: an average car emits 0.12 kg/hr, a small factory 2.4 kg/hr, a coal power plant ~700 kg/hr. Your unit is offsetting ${(S.co2/0.12).toFixed(1)} cars worth of emissions right now. Annual projection: ${(S.co2*8760/1000).toFixed(2)} tonnes — equivalent to removing ${((S.co2*8760/1000)/4.6).toFixed(0)} cars from the road per year.` },
+  { keys:['serbia','liquid3','belgrade','original','inventor'],
+    ans:()=>`LIQUID3 was developed by Dr. Ivan Spasojevic at the Institute for Multidisciplinary Research, University of Belgrade. Installed in September 2021 on Makedonska Street, Belgrade — Europe's most polluted city. It holds 600L of microalgae culture, equals 2 adult trees, and won the Green Product Award 2022. AlgaeX builds upon this foundation, adding real-time monitoring and AI analytics.` },
+  { keys:['efficienc','optimal','improv','optim','better'],
+    ans:()=>`Current efficiency is ${fmt(S.eff,1)}%. To maximize: (1) Maintain light at 350–400 μmol/m²/s — current ${S.light.toFixed(0)} is ${S.light<350?'slightly low, increase LED duty':'good'}. (2) Keep pH at 7.0–7.2 — ${S.ph<7.0||S.ph>7.3?'needs attention':'currently optimal'}. (3) Nutrient level ${S.nutr.toFixed(0)} mg/L N — ${S.nutr<38?'low, dose now':'adequate'}. (4) Temperature ${fmt(S.temp,1)}°C — ${S.temp>26?'slightly warm':'within range'}.` },
+  { keys:['nutrient','nitrogen','feed','dose'],
+    ans:()=>`Nutrient (nitrogen) level is ${fmt(S.nutr,1)} mg/L. Optimal range for Chlorella is 35–55 mg/L N. ${S.nutr<38?'⚠️ Approaching lower threshold — scheduled auto-dosing will activate within 2 hours. Nutrient starvation reduces growth rate and CO₂ capture efficiency.':'Currently within optimal range. Next scheduled dosing check in 2h 48m.'}` },
+  { keys:['pump','motor','actuator','mechatro'],
+    ans:()=>`Pump A (media circulation) running at ${S.pumpA.toFixed(0)} RPM — nominal. Pump B (nutrient dosing) on standby. Aerator at ${S.aerRPM.toFixed(0)} RPM for O₂ degassing. All mechatronics controlled by embedded Raspberry Pi with PID loops for pH, temperature, and gas injection. The entire system runs on solar power during daylight hours.` },
+  { keys:['annual','year','projection','future','scale'],
+    ans:()=>`At current rate of ${fmt(S.co2)} kg/hr: Annual capture = ${(S.co2*8760/1000).toFixed(2)} tonnes CO₂. If deployed at 100 urban locations: ${(S.co2*8760/1000*100).toFixed(0)} tonnes/year — equivalent to taking ${((S.co2*8760/1000*100)/4.6).toFixed(0)} cars off the road. The LIQUID3 model proves urban scaling is feasible on sidewalks, bus stops, and public squares.` },
+  { keys:['hello','hi','hey','help','what can','start'],
+    ans:()=>`Hello! I'm AlgaeX Bio-Core — your real-time bioreactor intelligence. I'm monitoring all sensors live right now. Current status: CO₂ capture ${fmt(S.co2)} kg/hr, O₂ production ${fmt(S.o2,1)} L/hr, efficiency ${fmt(S.eff,1)}%. Ask me about: CO₂ capture, pH optimization, algae biology, harvest timing, environmental impact, or the Serbian LIQUID3 story.` },
+];
+
+function aiBrainAnswer(msg){
+  const lower=msg.toLowerCase();
+  for(const entry of aiBrain){
+    if(entry.keys.some(k=>lower.includes(k))) return entry.ans();
+  }
+  // Fallback — contextual generic
+  return `Based on current reactor data (CO₂: ${fmt(S.co2)} kg/hr, O₂: ${fmt(S.o2,1)} L/hr, efficiency: ${fmt(S.eff,1)}%): The AlgaeX system is performing within optimal parameters. For this specific query, I'd recommend reviewing the Analytics or Impact pages for deeper insights. You can also ask me about CO₂ capture, pH, temperature, biomass harvest, environmental impact, or the LIQUID3 technology.`;
+}
+
+function quickSend(el){ $('ai-input').value=el.textContent; sendAI(); }
+async function sendAI(){
+  const inp=$('ai-input'); const msg=inp.value.trim(); if(!msg)return;
+  inp.value='';
+  appendMsg(msg,'user');
+  $('ai-typing').style.display='block';
+  scrollChat();
+
+  // Try real API first, fall back to built-in brain
+  const sys=`You are AlgaeX Bio-Core AI, embedded in the AlgaeX Urban BioReactor dashboard. Live data: CO₂ ${fmt(S.co2)} kg/hr, O₂ ${fmt(S.o2,1)} L/hr, pH ${fmt(S.ph,1)}, temp ${fmt(S.temp,1)}°C, efficiency ${fmt(S.eff,1)}%, density ${fmt(S.density,1)} g/L. Be concise, professional, under 100 words.`;
+  try{
+    const ctrl=new AbortController();
+    const to=setTimeout(()=>ctrl.abort(),4000);
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST', signal:ctrl.signal,
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:[{role:'user',content:msg}]})
+    });
+    clearTimeout(to);
+    const d=await r.json();
+    $('ai-typing').style.display='none';
+    appendMsg(d.content?.[0]?.text||aiBrainAnswer(msg),'ai');
+  }catch(e){
+    $('ai-typing').style.display='none';
+    // Use built-in intelligence
+    appendMsg(aiBrainAnswer(msg),'ai');
+  }
+}
+function appendMsg(text,role){
+  const msgs=$('ai-chat-messages');
+  const d=document.createElement('div');
+  d.className='chat-msg '+role;
+  d.innerHTML=`<div class="chat-avatar ${role}">${role==='ai'?'🌿':'U'}</div><div class="chat-bubble">${text}</div>`;
+  msgs.appendChild(d);
+  scrollChat();
+}
+function scrollChat(){ const m=$('ai-chat-messages'); if(m)setTimeout(()=>m.scrollTop=m.scrollHeight,50); }
+$('ai-input')?.addEventListener('keydown',e=>{ if(e.key==='Enter')sendAI(); });
+
+// ═══════════════════════════════════════════
+// BUTTON ACTIONS
+// ═══════════════════════════════════════════
+function exportCSV(){
+  const rows=[['Timestamp','CO2_kg_hr','O2_L_hr','pH','Temp_C','Density_g_L','Efficiency_pct','Light_umol','Turbidity_NTU','Nutrients_mgL']];
+  S.labels.forEach((t,i)=>{
+    rows.push([t,
+      (S.hist.co2[i]||0).toFixed(3),(S.hist.o2[i]||0).toFixed(2),
+      (S.hist.ph[i]||0).toFixed(2),(S.hist.temp[i]||0).toFixed(1),
+      (S.hist.biomass[i]||0).toFixed(3),(S.hist.eff[i]||0).toFixed(1),
+      (S.hist.light[i]||0).toFixed(0),(S.hist.turb[i]||0).toFixed(0),
+      (S.hist.nutr[i]||0).toFixed(1)
+    ]);
+  });
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='algaex-sensor-data-'+new Date().toISOString().slice(0,19).replace(/:/g,'-')+'.csv';
+  a.click();
+  addAlert({type:'info',msg:'Sensor data exported to CSV successfully.'});
+}
+
+function generateReport(){
+  const now=new Date().toLocaleString();
+  const trees=((S.co2/0.021)|0);
+  const annual=(S.co2*8760/1000).toFixed(2);
+  const html=`<!DOCTYPE html><html><head><title>AlgaeX Report</title>
+<style>body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;color:#111;line-height:1.6}
+h1{color:#15803d;border-bottom:2px solid #15803d;padding-bottom:8px}
+h2{color:#166534;margin-top:24px}.kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}
+.kpi-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;text-align:center}
+.kpi-val{font-size:24px;font-weight:700;color:#15803d}.kpi-lbl{font-size:11px;color:#666;margin-top:4px}
+table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:8px 12px;text-align:left;border-bottom:1px solid #e5e7eb}
+th{background:#f0fdf4;font-weight:600;font-size:12px}td{font-size:12px}
+.footer{margin-top:32px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:11px;color:#999}
+</style></head><body>
+<h1>🌿 AlgaeX Urban BioReactor — Status Report</h1>
+<p><strong>Generated:</strong> ${now}</p>
+<div class="kpi">
+  <div class="kpi-box"><div class="kpi-val">${fmt(S.co2)}</div><div class="kpi-lbl">CO₂ Capture (kg/hr)</div></div>
+  <div class="kpi-box"><div class="kpi-val">${fmt(S.o2,1)}</div><div class="kpi-lbl">O₂ Production (L/hr)</div></div>
+  <div class="kpi-box"><div class="kpi-val">${fmt(S.eff,1)}%</div><div class="kpi-lbl">Efficiency</div></div>
+</div>
+<h2>Environmental Impact</h2>
+<table><tr><th>Metric</th><th>Value</th></tr>
+<tr><td>Trees equivalent (per hour)</td><td>${trees}</td></tr>
+<tr><td>Annual CO₂ projection</td><td>${annual} tonnes</td></tr>
+<tr><td>Industrial offset</td><td>${(S.co2/2.4*100).toFixed(1)}% of small factory</td></tr>
+<tr><td>Session CO₂ captured</td><td>${fmt(S.co2Session,4)} kg</td></tr></table>
+<h2>Sensor Summary</h2>
+<table><tr><th>Sensor</th><th>Value</th><th>Status</th></tr>
+<tr><td>pH</td><td>${fmt(S.ph,1)}</td><td>${S.ph>=6.8&&S.ph<=7.4?'✅ Normal':'⚠️ Monitor'}</td></tr>
+<tr><td>Temperature</td><td>${fmt(S.temp,1)}°C</td><td>✅ Normal</td></tr>
+<tr><td>Algae Density</td><td>${fmt(S.density,1)} g/L</td><td>✅ Growing</td></tr>
+<tr><td>Turbidity</td><td>${S.turb.toFixed(0)} NTU</td><td>✅ Clear</td></tr>
+<tr><td>Nutrient (N)</td><td>${fmt(S.nutr,1)} mg/L</td><td>${S.nutr>35?'✅ Adequate':'⚠️ Low'}</td></tr></table>
+<div class="footer">AlgaeX Urban BioReactor · Based on LIQUID3 by University of Belgrade · Report auto-generated</div>
+</body></html>`;
+  const a=document.createElement('a');
+  a.href='data:text/html;charset=utf-8,'+encodeURIComponent(html);
+  a.download='algaex-report-'+new Date().toISOString().slice(0,10)+'.html';
+  a.click();
+  addAlert({type:'info',msg:'Report generated and downloaded successfully.'});
+}
+
+function calibrateAll(){
+  const btn=event.target; btn.textContent='⟳ Calibrating…'; btn.disabled=true;
+  let step=0;
+  const steps=['pH probe offset...','Temperature probe...','CO₂ sensor span...','O₂ sensor zero...','Turbidity NTU ref...','Complete ✓'];
+  const it=setInterval(()=>{
+    addAlert({type:'info',msg:'Calibration: '+steps[step]});
+    step++;
+    if(step>=steps.length){ clearInterval(it); btn.textContent='Calibrate All'; btn.disabled=false; addAlert({type:'ok',msg:'All sensors calibrated successfully. Data integrity confirmed.'}); }
+  },600);
+}
+
+// Override addAlert to accept object directly
+const _addAlertOrig = addAlert;
+function addAlert(obj){
+  if(typeof obj==='object'){
+    const t=new Date().toLocaleTimeString('en-US',{hour12:false});
+    const el=`<div class="alert-row ${obj.type}">
+      <div class="alert-dot ${obj.type}"></div>
+      <div class="alert-text">${obj.msg}</div>
+      <div class="alert-time">${t}</div>
+    </div>`;
+    const oa=$('overview-alerts'); if(oa){oa.insertAdjacentHTML('afterbegin',el);if(oa.children.length>5)oa.lastChild.remove();}
+    const fl=$('full-log'); if(fl){fl.insertAdjacentHTML('afterbegin',el);if(fl.children.length>30)fl.lastChild.remove();}
+  }
+}
+
+
+window.addEventListener('load',()=>{
+  initCharts();
+  updateSensorTable();
+  updateMechGrid();
+  updateImpact();
+  setInterval(tick,1000);
+  tick();
+});
+</script>
+</body>
+</html>
